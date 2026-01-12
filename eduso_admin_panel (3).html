@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EDUSO Admin Panel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --border: #475569;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: var(--bg-secondary);
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border);
+        }
+
+        h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .stat-value.accent { color: var(--accent); }
+        .stat-value.success { color: var(--success); }
+        .stat-value.warning { color: var(--warning); }
+
+        .section {
+            background: var(--bg-secondary);
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border);
+        }
+
+        .section-title {
+            font-size: 20px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        input[type="text"],
+        textarea {
+            flex: 1;
+            padding: 12px 16px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+            font-family: 'Courier New', monospace;
+        }
+
+        button {
+            padding: 12px 24px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        button:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.success {
+            background: var(--success);
+        }
+
+        button.success:hover {
+            background: #059669;
+        }
+
+        button.danger {
+            background: var(--danger);
+        }
+
+        button.danger:hover {
+            background: #dc2626;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .result-box {
+            margin-top: 16px;
+            padding: 16px;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            border-left: 4px solid var(--accent);
+            display: none;
+        }
+
+        .result-box.show {
+            display: block;
+        }
+
+        .result-box.success {
+            border-left-color: var(--success);
+        }
+
+        .result-box.error {
+            border-left-color: var(--danger);
+        }
+
+        .answer-item {
+            background: var(--bg-tertiary);
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .answer-content {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+        }
+
+        .badge.success {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+
+        .badge.warning {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning);
+        }
+
+        pre {
+            background: var(--bg-primary);
+            padding: 16px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 13px;
+            border: 1px solid var(--border);
+        }
+
+        .help-text {
+            color: var(--text-muted);
+            font-size: 13px;
+            margin-top: 8px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .divider {
+            height: 1px;
+            background: var(--border);
+            margin: 24px 0;
+        }
+
+        .answer-list-item {
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .answer-list-item:hover {
+            border-color: var(--accent);
+        }
+
+        .answer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .answer-id {
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        .answer-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .answer-details {
+            display: none;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+
+        .answer-details.show {
+            display: block;
+        }
+
+        .info-row {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .info-label {
+            color: var(--text-muted);
+            min-width: 100px;
+        }
+
+        .info-value {
+            color: var(--text-secondary);
+        }
+
+        .answers-preview {
+            margin-top: 12px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 800px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+        }
+
+        .close-btn:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎓 EDUSO Admin Panel</h1>
+            <p class="subtitle">Quản lý đáp án bài tập - Auto-delete sau 7 ngày</p>
+        </header>
+
+        <!-- Statistics -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Tổng đáp án</div>
+                <div class="stat-value accent" id="totalAnswers">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Lượt sử dụng</div>
+                <div class="stat-value success" id="totalUsage">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Sắp hết hạn (24h)</div>
+                <div class="stat-value warning" id="expiringSoon">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Upload cuối</div>
+                <div class="stat-value" id="lastUpload">-</div>
+            </div>
+        </div>
+
+        <!-- All Answers List -->
+        <div class="section">
+            <h2 class="section-title">📋 Danh sách đáp án</h2>
+            <div class="action-buttons" style="margin-bottom: 16px;">
+                <button onclick="loadAllAnswers()">
+                    🔄 Tải danh sách
+                </button>
+                <button onclick="toggleListView()">
+                    👁️ Ẩn/Hiện chi tiết
+                </button>
+            </div>
+            <div id="answersList"></div>
+        </div>
+
+        <!-- Search Answers -->
+        <div class="section">
+            <h2 class="section-title">🔍 Tìm kiếm đáp án theo ID</h2>
+            <div class="input-group">
+                <input type="text" id="searchPracticeId" placeholder="Nhập Practice ID (ví dụ: 67d1af20e4b0f10a68bf5de5)">
+                <button onclick="searchAnswer()">
+                    <span>Tìm kiếm</span>
+                </button>
+            </div>
+            <div class="result-box" id="searchResult"></div>
+        </div>
+
+        <!-- Edit/Upload Answers -->
+        <div class="section">
+            <h2 class="section-title">✏️ Sửa/Upload đáp án</h2>
+            <input type="text" id="editPracticeId" placeholder="Practice ID" style="margin-bottom: 12px;">
+            <textarea id="editAnswers" placeholder='Nhập đáp án dạng JSON array. Ví dụ:
+[
+  {"questionId": "q1", "correctAnswer": "A"},
+  {"questionId": "q2", "correctAnswer": "B"}
+]'></textarea>
+            <p class="help-text">💡 Mỗi object cần có questionId và correctAnswer. Có thể thêm các field khác nếu cần.</p>
+            <div class="action-buttons">
+                <button class="success" onclick="uploadAnswer()">
+                    💾 Lưu đáp án
+                </button>
+                <button onclick="validateJSON()">
+                    ✅ Validate JSON
+                </button>
+            </div>
+            <div class="result-box" id="editResult"></div>
+        </div>
+
+        <!-- Cleanup -->
+        <div class="section">
+            <h2 class="section-title">🧹 Dọn dẹp</h2>
+            <p class="help-text">Xóa tất cả đáp án cũ hơn 7 ngày (cleanup tự động đã chạy mỗi request)</p>
+            <button class="danger" onclick="manualCleanup()">
+                🗑️ Chạy cleanup thủ công
+            </button>
+            <div class="result-box" id="cleanupResult"></div>
+        </div>
+    </div>
+
+    <!-- Modal for View/Edit -->
+    <div class="modal" id="answerModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle">Chi tiết đáp án</h3>
+                <button class="close-btn" onclick="closeModal()">×</button>
+            </div>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://eduso-answers.edusoauto-license.workers.dev';
+        let allAnswersData = [];
+        let showDetails = false;
+
+        // Load stats on page load
+        loadStats();
+        setInterval(loadStats, 30000); // Refresh every 30s
+
+        async function loadStats() {
+            try {
+                const res = await fetch(`${API_BASE}/api/stats`);
+                const data = await res.json();
+
+                document.getElementById('totalAnswers').textContent = data.totalAnswers || 0;
+                document.getElementById('totalUsage').textContent = data.totalUsage || 0;
+                document.getElementById('expiringSoon').textContent = data.expiringSoon || 0;
+                
+                if (data.lastUpload) {
+                    const date = new Date(data.lastUpload);
+                    document.getElementById('lastUpload').textContent = date.toLocaleString('vi-VN');
+                } else {
+                    document.getElementById('lastUpload').textContent = 'Chưa có';
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        async function searchAnswer() {
+            const practiceId = document.getElementById('searchPracticeId').value.trim();
+            const resultBox = document.getElementById('searchResult');
+
+            if (!practiceId) {
+                showResult(resultBox, 'Vui lòng nhập Practice ID', 'error');
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/api/answers/${practiceId}`);
+                const data = await res.json();
+
+                if (data.exists) {
+                    let html = `
+                        <div style="margin-bottom: 16px;">
+                            <span class="badge success">Tìm thấy</span>
+                            <span class="badge">Dùng ${data.usageCount} lần</span>
+                            <span class="badge warning">Còn ${data.daysRemaining} ngày</span>
+                        </div>
+                        <div style="margin-bottom: 12px;">
+                            <strong>Practice ID:</strong> ${data.practiceId}<br>
+                            <strong>Tạo lúc:</strong> ${new Date(data.createdAt).toLocaleString('vi-VN')}<br>
+                            <strong>Hết hạn:</strong> ${new Date(data.expiresAt).toLocaleString('vi-VN')}
+                        </div>
+                        <div style="margin-bottom: 12px;">
+                            <strong>Đáp án (${data.answers.length}):</strong>
+                        </div>
+                    `;
+
+                    data.answers.forEach((ans, i) => {
+                        html += `
+                            <div class="answer-item">
+                                <span class="answer-content">${i + 1}. ${JSON.stringify(ans)}</span>
+                            </div>
+                        `;
+                    });
+
+                    html += `
+                        <button onclick="loadToEditor('${data.practiceId}', ${JSON.stringify(JSON.stringify(data.answers))})" style="margin-top: 12px;">
+                            📝 Load vào Editor
+                        </button>
+                    `;
+
+                    resultBox.innerHTML = html;
+                    resultBox.className = 'result-box show success';
+                } else {
+                    showResult(resultBox, data.message || 'Không tìm thấy đáp án', 'error');
+                }
+            } catch (error) {
+                showResult(resultBox, `Lỗi: ${error.message}`, 'error');
+            }
+        }
+
+        function loadToEditor(practiceId, answersJson) {
+            document.getElementById('editPracticeId').value = practiceId;
+            document.getElementById('editAnswers').value = JSON.stringify(JSON.parse(answersJson), null, 2);
+            window.scrollTo({ top: document.getElementById('editPracticeId').offsetTop - 100, behavior: 'smooth' });
+        }
+
+        function validateJSON() {
+            const answersText = document.getElementById('editAnswers').value.trim();
+            const resultBox = document.getElementById('editResult');
+
+            if (!answersText) {
+                showResult(resultBox, 'Vui lòng nhập JSON', 'error');
+                return;
+            }
+
+            try {
+                const parsed = JSON.parse(answersText);
+                if (!Array.isArray(parsed)) {
+                    showResult(resultBox, 'JSON phải là một array', 'error');
+                    return;
+                }
+
+                showResult(resultBox, `✅ JSON hợp lệ! Có ${parsed.length} đáp án`, 'success');
+            } catch (error) {
+                showResult(resultBox, `❌ JSON không hợp lệ: ${error.message}`, 'error');
+            }
+        }
+
+        async function uploadAnswer() {
+            const practiceId = document.getElementById('editPracticeId').value.trim();
+            const answersText = document.getElementById('editAnswers').value.trim();
+            const resultBox = document.getElementById('editResult');
+
+            if (!practiceId || !answersText) {
+                showResult(resultBox, 'Vui lòng nhập đầy đủ Practice ID và Answers', 'error');
+                return;
+            }
+
+            let answers;
+            try {
+                answers = JSON.parse(answersText);
+                if (!Array.isArray(answers)) {
+                    showResult(resultBox, 'Answers phải là một array', 'error');
+                    return;
+                }
+            } catch (error) {
+                showResult(resultBox, `JSON không hợp lệ: ${error.message}`, 'error');
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/api/answers`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        practiceId,
+                        answers,
+                        fingerprint: 'admin-panel'
+                    })
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    showResult(resultBox, `✅ ${data.message} - ${data.answersCount} đáp án - Hết hạn: ${new Date(data.expiresAt).toLocaleString('vi-VN')}`, 'success');
+                    loadStats();
+                } else {
+                    showResult(resultBox, `❌ ${data.error || 'Lỗi không xác định'}`, 'error');
+                }
+            } catch (error) {
+                showResult(resultBox, `❌ Lỗi: ${error.message}`, 'error');
+            }
+        }
+
+        async function manualCleanup() {
+            const resultBox = document.getElementById('cleanupResult');
+            
+            if (!confirm('Bạn có chắc muốn xóa tất cả đáp án cũ hơn 7 ngày?')) {
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/api/cleanup`, {
+                    method: 'POST'
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    showResult(resultBox, `✅ ${data.message} - Đã xóa ${data.deletedCount} đáp án`, 'success');
+                    loadStats();
+                } else {
+                    showResult(resultBox, `❌ Lỗi cleanup`, 'error');
+                }
+            } catch (error) {
+                showResult(resultBox, `❌ Lỗi: ${error.message}`, 'error');
+            }
+        }
+
+        function showResult(element, message, type) {
+            element.innerHTML = message;
+            element.className = `result-box show ${type}`;
+        }
+
+        // ==================== ALL ANSWERS LIST ====================
+        async function loadAllAnswers() {
+            const listContainer = document.getElementById('answersList');
+            listContainer.innerHTML = '<div class="loading"></div> Đang tải...';
+
+            try {
+                const res = await fetch(`${API_BASE}/api/answers/list`);
+                const data = await res.json();
+
+                if (!data.answers || data.answers.length === 0) {
+                    listContainer.innerHTML = '<div class="empty-state">📭 Chưa có đáp án nào</div>';
+                    return;
+                }
+
+                allAnswersData = data.answers;
+                renderAnswersList(data.answers);
+
+            } catch (error) {
+                listContainer.innerHTML = `<div class="result-box show error">❌ Lỗi: ${error.message}</div>`;
+            }
+        }
+
+        function toggleListView() {
+            showDetails = !showDetails;
+            document.querySelectorAll('.answer-details').forEach(el => {
+                el.classList.toggle('show', showDetails);
+            });
+        }
+
+        function renderAnswersList(answers) {
+            const listContainer = document.getElementById('answersList');
+            
+            if (answers.length === 0) {
+                listContainer.innerHTML = '<div class="empty-state">📭 Không có đáp án nào</div>';
+                return;
+            }
+
+            let html = answers.map(ans => {
+                const createdDate = new Date(ans.created_at).toLocaleString('vi-VN');
+                const daysAgo = Math.floor((Date.now() - ans.created_at) / (1000 * 60 * 60 * 24));
+                const daysRemaining = 7 - daysAgo;
+
+                return `
+                    <div class="answer-list-item">
+                        <div class="answer-header">
+                            <div>
+                                <div class="answer-id">${ans.practice_id}</div>
+                                <div style="display: flex; gap: 8px; margin-top: 8px;">
+                                    <span class="badge">Dùng ${ans.usage_count || 0} lần</span>
+                                    <span class="badge ${daysRemaining <= 1 ? 'warning' : ''}">Còn ${daysRemaining} ngày</span>
+                                </div>
+                            </div>
+                            <div class="answer-actions">
+                                <button class="btn-sm" onclick="openPractice('${ans.practice_id}')" style="background: #8b5cf6;">🎯 Làm bài</button>
+                                <button class="btn-sm" onclick="viewAnswer('${ans.practice_id}')">👁️ Xem</button>
+                                <button class="btn-sm success" onclick="editAnswer('${ans.practice_id}')">✏️ Sửa</button>
+                                <button class="btn-sm danger" onclick="deleteAnswer('${ans.practice_id}')">🗑️ Xóa</button>
+                            </div>
+                        </div>
+                        <div class="answer-details ${showDetails ? 'show' : ''}">
+                            <div class="info-row">
+                                <span class="info-label">Tạo lúc:</span>
+                                <span class="info-value">${createdDate}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Số câu:</span>
+                                <span class="info-value">${ans.answers_count || '?'}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            listContainer.innerHTML = html;
+        }
+
+        async function viewAnswer(practiceId) {
+            const modal = document.getElementById('answerModal');
+            const modalBody = document.getElementById('modalBody');
+            document.getElementById('modalTitle').textContent = '👁️ Xem đáp án';
+
+            modalBody.innerHTML = '<div class="loading"></div> Đang tải...';
+            modal.classList.add('show');
+
+            try {
+                const res = await fetch(`${API_BASE}/api/answers/${practiceId}`);
+                const data = await res.json();
+
+                if (data.exists) {
+                    let html = `
+                        <div style="margin-bottom: 16px;">
+                            <div class="info-row">
+                                <span class="info-label">Practice ID:</span>
+                                <span class="info-value">${data.practiceId}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Tạo lúc:</span>
+                                <span class="info-value">${new Date(data.createdAt).toLocaleString('vi-VN')}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Cập nhật:</span>
+                                <span class="info-value">${new Date(data.updatedAt).toLocaleString('vi-VN')}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Hết hạn:</span>
+                                <span class="info-value">${new Date(data.expiresAt).toLocaleString('vi-VN')}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Lượt dùng:</span>
+                                <span class="info-value">${data.usageCount}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Còn lại:</span>
+                                <span class="info-value">${data.daysRemaining} ngày</span>
+                            </div>
+                        </div>
+                        <div class="divider"></div>
+                        <h4 style="margin-bottom: 12px;">Đáp án (${data.answers.length}):</h4>
+                    `;
+
+                    data.answers.forEach((ans, i) => {
+                        html += `
+                            <div class="answer-item">
+                                <span class="answer-content">${i + 1}. ${JSON.stringify(ans)}</span>
+                            </div>
+                        `;
+                    });
+
+                    html += `
+                        <div class="action-buttons">
+                            <button onclick="editAnswer('${data.practiceId}'); closeModal();">
+                                ✏️ Chỉnh sửa
+                            </button>
+                            <button class="danger" onclick="deleteAnswer('${data.practiceId}'); closeModal();">
+                                🗑️ Xóa
+                            </button>
+                        </div>
+                    `;
+
+                    modalBody.innerHTML = html;
+                } else {
+                    modalBody.innerHTML = `<div class="result-box show error">${data.message}</div>`;
+                }
+            } catch (error) {
+                modalBody.innerHTML = `<div class="result-box show error">❌ Lỗi: ${error.message}</div>`;
+            }
+        }
+
+        async function editAnswer(practiceId) {
+            try {
+                const res = await fetch(`${API_BASE}/api/answers/${practiceId}`);
+                const data = await res.json();
+
+                if (data.exists) {
+                    document.getElementById('editPracticeId').value = data.practiceId;
+                    document.getElementById('editAnswers').value = JSON.stringify(data.answers, null, 2);
+                    
+                    // Scroll to editor
+                    document.getElementById('editPracticeId').scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'center' 
+                    });
+                    
+                    // Highlight
+                    const section = document.getElementById('editPracticeId').closest('.section');
+                    section.style.border = '2px solid var(--accent)';
+                    setTimeout(() => {
+                        section.style.border = '1px solid var(--border)';
+                    }, 2000);
+                } else {
+                    alert('Không tìm thấy đáp án');
+                }
+            } catch (error) {
+                alert(`Lỗi: ${error.message}`);
+            }
+        }
+
+        async function deleteAnswer(practiceId) {
+            if (!confirm(`Bạn có chắc muốn xóa đáp án:\n${practiceId}\n\n⚠️ Hành động này không thể hoàn tác!`)) {
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/api/answers/${practiceId}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    alert(`✅ ${data.message}`);
+                    loadAllAnswers(); // Refresh list
+                    loadStats(); // Refresh stats
+                } else {
+                    alert(`❌ ${data.error || 'Lỗi xóa đáp án'}`);
+                }
+
+            } catch (error) {
+                alert(`Lỗi: ${error.message}`);
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('answerModal').classList.remove('show');
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('answerModal').addEventListener('click', (e) => {
+            if (e.target.id === 'answerModal') {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>
