@@ -1,924 +1,955 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EDUSO Admin Panel</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KT Support — Admin Panel v2.2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #1a1a24;
+    --border: rgba(140, 100, 255, 0.18);
+    --accent: #8c64ff;
+    --accent2: #c084fc;
+    --green: #22c55e;
+    --red: #ef4444;
+    --yellow: #fbbf24;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --online: #22c55e;
+    --offline: #ef4444;
+    --font-mono: 'JetBrains Mono', monospace;
+    --font-sans: 'DM Sans', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font-sans); }
 
-        :root {
-            --bg-primary: #0f172a;
-            --bg-secondary: #1e293b;
-            --bg-tertiary: #334155;
-            --text-primary: #f1f5f9;
-            --text-secondary: #cbd5e1;
-            --text-muted: #94a3b8;
-            --accent: #3b82f6;
-            --accent-hover: #2563eb;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --border: #475569;
-        }
+  /* ─── SCANLINE + GRID BACKGROUND ─── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image:
+      linear-gradient(rgba(140,100,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(140,100,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  body::after {
+    content: '';
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(140,100,255,0.12), transparent);
+  }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            line-height: 1.6;
-            padding: 20px;
-        }
+  /* ─── LOGIN SCREEN ─── */
+  #loginScreen {
+    position: fixed; inset: 0; z-index: 1000;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .login-box {
+    position: relative; z-index: 1;
+    width: 360px; padding: 44px 36px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    box-shadow: 0 0 80px rgba(140,100,255,0.1), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  .login-logo {
+    text-align: center; margin-bottom: 32px;
+  }
+  .login-logo .icon { font-size: 48px; line-height: 1; margin-bottom: 10px; display: block; }
+  .login-logo h1 {
+    font-family: var(--font-mono); font-size: 22px; font-weight: 800;
+    letter-spacing: 3px; text-transform: uppercase;
+    background: linear-gradient(135deg, #8c64ff, #c084fc);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .login-logo p { color: var(--muted); font-size: 12px; margin-top: 4px; letter-spacing: 1px; }
+  .login-field { margin-bottom: 16px; }
+  .login-field label { display: block; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+  .login-field input {
+    width: 100%; padding: 12px 16px;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 10px; color: var(--text);
+    font-family: var(--font-mono); font-size: 14px; outline: none;
+    transition: border-color 0.2s;
+  }
+  .login-field input:focus { border-color: var(--accent); }
+  .login-field input.err { border-color: var(--red); }
+  .login-btn {
+    width: 100%; padding: 13px;
+    background: linear-gradient(135deg, #8c64ff, #c084fc);
+    border: none; border-radius: 10px;
+    color: #fff; font-family: var(--font-mono); font-weight: 700; font-size: 13px;
+    letter-spacing: 2px; text-transform: uppercase; cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+    margin-top: 8px;
+  }
+  .login-btn:hover { opacity: 0.9; }
+  .login-btn:active { transform: scale(0.98); }
+  .login-err { color: var(--red); font-size: 11px; text-align: center; margin-top: 10px; display: none; }
 
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
+  /* ─── MAIN APP ─── */
+  #app { display: none; position: relative; z-index: 1; height: 100vh; overflow: hidden; }
 
-        header {
-            background: var(--bg-secondary);
-            padding: 24px;
-            border-radius: 12px;
-            margin-bottom: 24px;
-            border: 1px solid var(--border);
-        }
+  /* ─── TOPBAR ─── */
+  .topbar {
+    height: 56px; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px;
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    position: relative; z-index: 10;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 12px; }
+  .topbar-title {
+    font-family: var(--font-mono); font-size: 14px; font-weight: 800;
+    letter-spacing: 2px; text-transform: uppercase;
+    background: linear-gradient(135deg, #8c64ff, #c084fc);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .topbar-dot {
+    width: 8px; height: 8px; border-radius: 50%; background: var(--green);
+    box-shadow: 0 0 8px var(--green); animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+  .topbar-worker {
+    font-family: var(--font-mono); font-size: 11px; color: var(--muted);
+    background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+    padding: 4px 10px; cursor: pointer; transition: border-color 0.2s;
+    max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .topbar-worker:hover { border-color: var(--accent); }
+  .topbar-logout {
+    padding: 6px 14px; background: transparent; border: 1px solid var(--border);
+    border-radius: 8px; color: var(--muted); font-size: 12px; font-family: var(--font-mono);
+    cursor: pointer; transition: all 0.2s;
+  }
+  .topbar-logout:hover { border-color: var(--red); color: var(--red); }
 
-        h1 {
-            font-size: 28px;
-            margin-bottom: 8px;
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
+  /* ─── LAYOUT ─── */
+  .main-layout {
+    display: grid; grid-template-columns: 280px 1fr;
+    height: calc(100vh - 56px); overflow: hidden;
+  }
 
-        .subtitle {
-            color: var(--text-muted);
-            font-size: 14px;
-        }
+  /* ─── SIDEBAR ─── */
+  .sidebar {
+    background: var(--surface); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .sidebar-header {
+    padding: 16px 16px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-header h2 { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); }
+  .sidebar-stats { display: flex; gap: 8px; margin-top: 10px; }
+  .stat-chip {
+    flex: 1; padding: 8px; border-radius: 8px; background: var(--bg);
+    border: 1px solid var(--border); text-align: center;
+  }
+  .stat-chip .val { font-family: var(--font-mono); font-size: 20px; font-weight: 800; }
+  .stat-chip .lbl { font-size: 10px; color: var(--muted); }
+  .stat-chip.green .val { color: var(--green); }
+  .stat-chip.red .val { color: var(--red); }
+  .refresh-btn {
+    width: 100%; margin-top: 10px; padding: 8px; border-radius: 8px;
+    background: var(--bg); border: 1px solid var(--border);
+    color: var(--muted); font-size: 11px; font-family: var(--font-mono);
+    cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .refresh-icon { transition: transform 0.4s; }
+  .refresh-btn.spinning .refresh-icon { animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
 
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 16px;
-            margin-bottom: 24px;
-        }
+  .client-list { flex: 1; overflow-y: auto; padding: 8px; }
+  .client-list::-webkit-scrollbar { width: 4px; }
+  .client-list::-webkit-scrollbar-track { background: transparent; }
+  .client-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-        .stat-card {
-            background: var(--bg-secondary);
-            padding: 20px;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-            transition: all 0.3s ease;
-        }
+  .client-card {
+    padding: 12px 14px; border-radius: 10px; margin-bottom: 6px;
+    background: var(--bg); border: 1px solid var(--border);
+    cursor: pointer; transition: all 0.15s; position: relative;
+  }
+  .client-card:hover { border-color: rgba(140,100,255,0.4); background: #0f0f1a; }
+  .client-card.selected { border-color: var(--accent); background: rgba(140,100,255,0.06); }
+  .client-card.selected::before {
+    content: '';
+    position: absolute; left: 0; top: 4px; bottom: 4px;
+    width: 3px; background: var(--accent); border-radius: 0 2px 2px 0;
+  }
+  .client-name { font-size: 13px; font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+  .online-badge {
+    width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+    box-shadow: 0 0 6px currentColor;
+  }
+  .online-badge.on { background: var(--green); color: var(--green); }
+  .online-badge.off { background: var(--offline); color: var(--offline); }
+  .client-meta { font-size: 10px; color: var(--muted); font-family: var(--font-mono); }
+  .client-meta span { display: block; }
 
-        .stat-card:hover {
-            border-color: var(--accent);
-            transform: translateY(-2px);
-        }
+  .broadcast-btn {
+    margin: 8px; padding: 10px; border-radius: 8px;
+    background: rgba(140,100,255,0.1); border: 1px solid rgba(140,100,255,0.3);
+    color: var(--accent); font-size: 11px; font-family: var(--font-mono); font-weight: 700;
+    cursor: pointer; text-align: center; transition: all 0.2s;
+    letter-spacing: 1px;
+  }
+  .broadcast-btn:hover { background: rgba(140,100,255,0.2); border-color: var(--accent); }
 
-        .stat-label {
-            color: var(--text-muted);
-            font-size: 13px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 8px;
-        }
+  /* ─── CONTENT ─── */
+  .content { display: flex; flex-direction: column; overflow: hidden; }
 
-        .stat-value {
-            font-size: 32px;
-            font-weight: 700;
-            color: var(--text-primary);
-        }
+  /* ─── EMPTY STATE ─── */
+  .empty-state {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 12px; color: var(--muted);
+  }
+  .empty-state .icon { font-size: 48px; opacity: 0.3; }
+  .empty-state p { font-size: 13px; }
 
-        .stat-value.accent { color: var(--accent); }
-        .stat-value.success { color: var(--success); }
-        .stat-value.warning { color: var(--warning); }
+  /* ─── COMMAND PANEL ─── */
+  .cmd-panel { flex: 1; overflow-y: auto; padding: 20px; display: none; flex-direction: column; gap: 16px; }
+  .cmd-panel::-webkit-scrollbar { width: 4px; }
+  .cmd-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-        .section {
-            background: var(--bg-secondary);
-            padding: 24px;
-            border-radius: 12px;
-            margin-bottom: 24px;
-            border: 1px solid var(--border);
-        }
+  .panel-target {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .panel-target-left { display: flex; align-items: center; gap: 10px; }
+  .panel-target-name { font-size: 15px; font-weight: 700; }
+  .panel-target-id { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+  .panel-target-status {
+    padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700;
+    font-family: var(--font-mono); letter-spacing: 1px;
+  }
+  .panel-target-status.on { background: rgba(34,197,94,0.1); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
+  .panel-target-status.off { background: rgba(239,68,68,0.1); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
 
-        .section-title {
-            font-size: 20px;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+  .cmd-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
-        .input-group {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 16px;
-        }
+  .cmd-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 16px; transition: border-color 0.2s;
+  }
+  .cmd-card:hover { border-color: rgba(140,100,255,0.3); }
+  .cmd-card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .cmd-card-icon { font-size: 18px; }
+  .cmd-card-title { font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
+  .cmd-card.full { grid-column: 1 / -1; }
 
-        input[type="text"],
-        textarea {
-            flex: 1;
-            padding: 12px 16px;
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text-primary);
-            font-size: 14px;
-            transition: all 0.3s ease;
-        }
+  /* Toggle */
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; }
+  .toggle-label { font-size: 13px; font-weight: 500; }
+  .toggle-switch {
+    position: relative; width: 44px; height: 24px; cursor: pointer;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 24px; transition: all 0.2s;
+  }
+  .toggle-switch.on { background: var(--accent); border-color: var(--accent); }
+  .toggle-thumb {
+    position: absolute; top: 3px; left: 3px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--muted); transition: left 0.2s, background 0.2s;
+  }
+  .toggle-switch.on .toggle-thumb { left: 23px; background: #fff; }
+  .toggle-desc { font-size: 11px; color: var(--muted); margin-top: 6px; }
 
-        input[type="text"]:focus,
-        textarea:focus {
-            outline: none;
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        }
+  /* Buttons */
+  .cmd-btn {
+    padding: 9px 16px; border-radius: 8px; font-size: 12px; font-weight: 700;
+    font-family: var(--font-mono); cursor: pointer; border: none;
+    transition: all 0.15s; letter-spacing: 1px;
+  }
+  .cmd-btn-primary { background: var(--accent); color: #fff; }
+  .cmd-btn-primary:hover { background: #9f78ff; }
+  .cmd-btn-green { background: var(--green); color: #fff; }
+  .cmd-btn-green:hover { background: #16a34a; }
+  .cmd-btn-red { background: var(--red); color: #fff; }
+  .cmd-btn-red:hover { background: #dc2626; }
+  .cmd-btn-outline {
+    background: transparent; color: var(--accent);
+    border: 1px solid rgba(140,100,255,0.4); padding: 9px 16px;
+    border-radius: 8px; font-size: 12px; font-weight: 700;
+    font-family: var(--font-mono); cursor: pointer; transition: all 0.15s;
+  }
+  .cmd-btn-outline:hover { background: rgba(140,100,255,0.1); }
+  .cmd-btn-full { width: 100%; }
+  .cmd-btn-row { display: flex; gap: 8px; margin-top: 10px; }
 
-        textarea {
-            min-height: 120px;
-            resize: vertical;
-            font-family: 'Courier New', monospace;
-        }
+  /* Inputs */
+  .cmd-textarea, .cmd-input {
+    width: 100%; padding: 10px 12px; border-radius: 8px;
+    background: var(--bg); border: 1px solid var(--border);
+    color: var(--text); font-family: var(--font-mono); font-size: 12px;
+    outline: none; resize: vertical; transition: border-color 0.2s;
+  }
+  .cmd-textarea:focus, .cmd-input:focus { border-color: var(--accent); }
+  .cmd-textarea { min-height: 80px; }
+  .cmd-input { resize: none; }
 
-        button {
-            padding: 12px 24px;
-            background: var(--accent);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
+  /* Config edit */
+  .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .config-item label {
+    display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--muted); margin-bottom: 4px;
+  }
+  .config-item input {
+    width: 100%; padding: 8px 10px; border-radius: 6px;
+    background: var(--bg); border: 1px solid var(--border);
+    color: var(--text); font-family: var(--font-mono); font-size: 12px; outline: none;
+    transition: border-color 0.2s;
+  }
+  .config-item input:focus { border-color: var(--accent); }
 
-        button:hover {
-            background: var(--accent-hover);
-            transform: translateY(-1px);
-        }
+  /* Log panel */
+  .log-panel {
+    background: var(--surface); border-top: 1px solid var(--border);
+    height: 160px; min-height: 160px; overflow-y: auto; padding: 10px 16px;
+    flex-shrink: 0;
+  }
+  .log-panel::-webkit-scrollbar { width: 4px; }
+  .log-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .log-header {
+    font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;
+  }
+  .log-clear { cursor: pointer; color: var(--muted); transition: color 0.2s; font-size: 10px; }
+  .log-clear:hover { color: var(--red); }
+  .log-entry {
+    font-family: var(--font-mono); font-size: 11px; line-height: 1.7; display: flex; gap: 8px;
+  }
+  .log-entry .ts { color: var(--muted); flex-shrink: 0; }
+  .log-entry.ok .msg { color: var(--green); }
+  .log-entry.err .msg { color: var(--red); }
+  .log-entry.info .msg { color: var(--accent); }
+  .log-entry.warn .msg { color: var(--yellow); }
 
-        button:active {
-            transform: translateY(0);
-        }
+  /* Toast */
+  .toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+  .toast {
+    padding: 10px 16px; border-radius: 8px; font-size: 12px; font-family: var(--font-mono);
+    font-weight: 600; animation: toastIn 0.3s ease; box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .toast.ok { background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.4); color: var(--green); }
+  .toast.err { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.4); color: var(--red); }
+  @keyframes toastIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
 
-        button.success {
-            background: var(--success);
-        }
+  /* Worker config modal */
+  #workerModal {
+    position: fixed; inset: 0; z-index: 2000; display: none;
+    align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+  }
+  #workerModal.open { display: flex; }
+  .modal-box {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    padding: 28px 24px; width: 400px;
+    box-shadow: 0 0 60px rgba(140,100,255,0.1);
+  }
+  .modal-box h3 { font-family: var(--font-mono); font-size: 14px; font-weight: 800; margin-bottom: 16px; color: var(--accent); letter-spacing: 1px; }
+  .modal-box label { display: block; font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; margin-top: 14px; }
+  .modal-box input {
+    width: 100%; padding: 10px 14px; border-radius: 8px;
+    background: var(--bg); border: 1px solid var(--border);
+    color: var(--text); font-family: var(--font-mono); font-size: 13px; outline: none;
+    transition: border-color 0.2s;
+  }
+  .modal-box input:focus { border-color: var(--accent); }
+  .modal-hint { font-size: 10px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+  .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
 
-        button.success:hover {
-            background: #059669;
-        }
+  /* Answers manager */
+  .answers-target-input { display: flex; gap: 8px; margin-bottom: 8px; }
+  .answers-target-input input { flex: 1; }
 
-        button.danger {
-            background: var(--danger);
-        }
-
-        button.danger:hover {
-            background: #dc2626;
-        }
-
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .result-box {
-            margin-top: 16px;
-            padding: 16px;
-            background: var(--bg-tertiary);
-            border-radius: 8px;
-            border-left: 4px solid var(--accent);
-            display: none;
-        }
-
-        .result-box.show {
-            display: block;
-        }
-
-        .result-box.success {
-            border-left-color: var(--success);
-        }
-
-        .result-box.error {
-            border-left-color: var(--danger);
-        }
-
-        .answer-item {
-            background: var(--bg-tertiary);
-            padding: 12px;
-            border-radius: 6px;
-            margin-bottom: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .answer-content {
-            font-family: 'Courier New', monospace;
-            font-size: 13px;
-            color: var(--text-secondary);
-        }
-
-        .loading {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 2px solid var(--border);
-            border-top-color: var(--accent);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .badge {
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-            background: var(--bg-tertiary);
-            color: var(--text-secondary);
-        }
-
-        .badge.success {
-            background: rgba(16, 185, 129, 0.2);
-            color: var(--success);
-        }
-
-        .badge.warning {
-            background: rgba(245, 158, 11, 0.2);
-            color: var(--warning);
-        }
-
-        pre {
-            background: var(--bg-primary);
-            padding: 16px;
-            border-radius: 8px;
-            overflow-x: auto;
-            font-size: 13px;
-            border: 1px solid var(--border);
-        }
-
-        .help-text {
-            color: var(--text-muted);
-            font-size: 13px;
-            margin-top: 8px;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 12px;
-            margin-top: 16px;
-        }
-
-        .divider {
-            height: 1px;
-            background: var(--border);
-            margin: 24px 0;
-        }
-
-        .answer-list-item {
-            background: var(--bg-tertiary);
-            border-radius: 8px;
-            padding: 16px;
-            margin-bottom: 12px;
-            border: 1px solid var(--border);
-            transition: all 0.3s ease;
-        }
-
-        .answer-list-item:hover {
-            border-color: var(--accent);
-        }
-
-        .answer-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-        }
-
-        .answer-id {
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--accent);
-        }
-
-        .answer-actions {
-            display: flex;
-            gap: 8px;
-        }
-
-        .btn-sm {
-            padding: 6px 12px;
-            font-size: 12px;
-        }
-
-        .answer-details {
-            display: none;
-            margin-top: 12px;
-            padding-top: 12px;
-            border-top: 1px solid var(--border);
-        }
-
-        .answer-details.show {
-            display: block;
-        }
-
-        .info-row {
-            display: flex;
-            gap: 16px;
-            margin-bottom: 8px;
-            font-size: 13px;
-        }
-
-        .info-label {
-            color: var(--text-muted);
-            min-width: 100px;
-        }
-
-        .info-value {
-            color: var(--text-secondary);
-        }
-
-        .answers-preview {
-            margin-top: 12px;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 40px;
-            color: var(--text-muted);
-        }
-
-        /* Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.8);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal.show {
-            display: flex;
-        }
-
-        .modal-content {
-            background: var(--bg-secondary);
-            border-radius: 12px;
-            padding: 24px;
-            max-width: 800px;
-            width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
-            border: 1px solid var(--border);
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .modal-title {
-            font-size: 20px;
-            font-weight: 600;
-        }
-
-        .close-btn {
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            font-size: 24px;
-            cursor: pointer;
-            padding: 0;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 6px;
-        }
-
-        .close-btn:hover {
-            background: var(--bg-tertiary);
-            color: var(--text-primary);
-        }
-    </style>
+  /* No-client placeholder */
+  .no-clients { text-align: center; padding: 40px 16px; color: var(--muted); font-size: 12px; line-height: 2; }
+  .no-clients .icon { font-size: 32px; display: block; margin-bottom: 8px; opacity: 0.3; }
+</style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>🎓 EDUSO Admin Panel</h1>
-            <p class="subtitle">Quản lý đáp án bài tập - Auto-delete sau 7 ngày</p>
-        </header>
 
-        <!-- Statistics -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-label">Tổng đáp án</div>
-                <div class="stat-value accent" id="totalAnswers">-</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Lượt sử dụng</div>
-                <div class="stat-value success" id="totalUsage">-</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Sắp hết hạn (24h)</div>
-                <div class="stat-value warning" id="expiringSoon">-</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Upload cuối</div>
-                <div class="stat-value" id="lastUpload">-</div>
-            </div>
-        </div>
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">
+      <span class="icon">🎮</span>
+      <h1>KT SUPPORT</h1>
+      <p>ADMIN PANEL v2.0</p>
+    </div>
+    <div class="login-field">
+      <label>Mật khẩu Admin</label>
+      <input type="password" id="passwordInput" placeholder="Nhập mật khẩu..." autocomplete="off">
+    </div>
+    <button class="login-btn" id="loginBtn">ĐĂNG NHẬP</button>
+    <div class="login-err" id="loginErr">Sai mật khẩu hoặc không kết nối được!</div>
+  </div>
+</div>
 
-        <!-- All Answers List -->
-        <div class="section">
-            <h2 class="section-title">📋 Danh sách đáp án</h2>
-            <div class="action-buttons" style="margin-bottom: 16px;">
-                <button onclick="loadAllAnswers()">
-                    🔄 Tải danh sách
-                </button>
-                <button onclick="toggleListView()">
-                    👁️ Ẩn/Hiện chi tiết
-                </button>
-            </div>
-            <div id="answersList"></div>
-        </div>
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-left">
+      <span style="font-size:20px;">🎮</span>
+      <div class="topbar-title">KT SUPPORT ADMIN</div>
+      <div class="topbar-dot"></div>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-worker" id="topbarWorkerUrl" title="Nhấn để đổi Worker URL"></div>
+      <button class="topbar-logout" id="logoutBtn">LOGOUT</button>
+    </div>
+  </div>
 
-        <!-- Search Answers -->
-        <div class="section">
-            <h2 class="section-title">🔍 Tìm kiếm đáp án theo ID</h2>
-            <div class="input-group">
-                <input type="text" id="searchPracticeId" placeholder="Nhập Practice ID (ví dụ: 67d1af20e4b0f10a68bf5de5)">
-                <button onclick="searchAnswer()">
-                    <span>Tìm kiếm</span>
-                </button>
-            </div>
-            <div class="result-box" id="searchResult"></div>
+  <div class="main-layout">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <h2>Máy đích</h2>
+        <div class="sidebar-stats">
+          <div class="stat-chip green"><div class="val" id="onlineCount">0</div><div class="lbl">Online</div></div>
+          <div class="stat-chip red"><div class="val" id="offlineCount">0</div><div class="lbl">Offline</div></div>
+          <div class="stat-chip"><div class="val" id="totalCount">0</div><div class="lbl">Tổng</div></div>
         </div>
-
-        <!-- Edit/Upload Answers -->
-        <div class="section">
-            <h2 class="section-title">✏️ Sửa/Upload đáp án</h2>
-            <input type="text" id="editPracticeId" placeholder="Practice ID" style="margin-bottom: 12px;">
-            <textarea id="editAnswers" placeholder='Nhập đáp án dạng JSON array. Ví dụ:
-[
-  {"questionId": "q1", "correctAnswer": "A"},
-  {"questionId": "q2", "correctAnswer": "B"}
-]'></textarea>
-            <p class="help-text">💡 Mỗi object cần có questionId và correctAnswer. Có thể thêm các field khác nếu cần.</p>
-            <div class="action-buttons">
-                <button class="success" onclick="uploadAnswer()">
-                    💾 Lưu đáp án
-                </button>
-                <button onclick="validateJSON()">
-                    ✅ Validate JSON
-                </button>
-            </div>
-            <div class="result-box" id="editResult"></div>
-        </div>
-
-        <!-- Cleanup -->
-        <div class="section">
-            <h2 class="section-title">🧹 Dọn dẹp</h2>
-            <p class="help-text">Xóa tất cả đáp án cũ hơn 7 ngày (cleanup tự động đã chạy mỗi request)</p>
-            <button class="danger" onclick="manualCleanup()">
-                🗑️ Chạy cleanup thủ công
-            </button>
-            <div class="result-box" id="cleanupResult"></div>
-        </div>
+        <button class="refresh-btn" id="refreshBtn">
+          <span class="refresh-icon">↻</span>
+          <span>Làm mới danh sách</span>
+        </button>
+      </div>
+      <div class="client-list" id="clientList">
+        <div class="no-clients"><span class="icon">📡</span>Chưa có máy nào kết nối<br>Hãy cài userscript trên máy đích</div>
+      </div>
+      <button class="broadcast-btn" id="broadcastBtn">📡 BROADCAST TẤT CẢ</button>
     </div>
 
-    <!-- Modal for View/Edit -->
-    <div class="modal" id="answerModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title" id="modalTitle">Chi tiết đáp án</h3>
-                <button class="close-btn" onclick="closeModal()">×</button>
+    <!-- CONTENT -->
+    <div class="content">
+      <div class="empty-state" id="emptyState">
+        <div class="icon">🎯</div>
+        <p>Chọn một máy đích từ danh sách bên trái</p>
+      </div>
+
+      <div class="cmd-panel" id="cmdPanel">
+        <!-- Target info -->
+        <div class="panel-target" id="panelTarget">
+          <div class="panel-target-left">
+            <span style="font-size:20px;">💻</span>
+            <div>
+              <div class="panel-target-name" id="targetName">—</div>
+              <div class="panel-target-id" id="targetId">—</div>
             </div>
-            <div id="modalBody"></div>
+          </div>
+          <div class="panel-target-status on" id="targetStatus">ONLINE</div>
         </div>
+
+        <div class="cmd-grid">
+          <!-- GOD MODE -->
+          <div class="cmd-card">
+            <div class="cmd-card-header">
+              <span class="cmd-card-icon">⚡</span>
+              <span class="cmd-card-title">God Mode</span>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label">AUTO 1S</span>
+              <div class="toggle-switch" id="godModeSwitch">
+                <div class="toggle-thumb"></div>
+              </div>
+            </div>
+            <div class="toggle-desc">Bật/tắt chế độ điền đáp án tức thì</div>
+            <div class="cmd-btn-row">
+              <button class="cmd-btn cmd-btn-primary" onclick="sendGodMode()">GỬI LỆNH</button>
+            </div>
+          </div>
+
+          <!-- AUTO START/STOP -->
+          <div class="cmd-card">
+            <div class="cmd-card-header">
+              <span class="cmd-card-icon">🤖</span>
+              <span class="cmd-card-title">Điều khiển</span>
+            </div>
+            <div class="cmd-btn-row" style="flex-direction:column; gap:8px; margin-top:0;">
+              <button class="cmd-btn cmd-btn-green cmd-btn-full" onclick="sendCmd('start')">▶ START AUTO</button>
+              <button class="cmd-btn cmd-btn-red cmd-btn-full" onclick="sendCmd('stop')">■ STOP AUTO</button>
+            </div>
+          </div>
+
+          <!-- 🚀 NHẬP ĐÁP ÁN & START TRỰC TIẾP -->
+          <div class="cmd-card full" style="border-color:rgba(34,197,94,0.35);">
+            <div class="cmd-card-header">
+              <span class="cmd-card-icon">🚀</span>
+              <span class="cmd-card-title" style="color:var(--green);">Nhập đáp án → Start ngay</span>
+            </div>
+            <textarea class="cmd-textarea" id="directAnswersInput" placeholder='Dán đáp án vào đây&#10;["A.","B.","C.","D."]&#10;hoặc mỗi dòng một đáp án' style="min-height:80px;border-color:rgba(34,197,94,0.3);"></textarea>
+            <div class="config-grid" style="margin-top:8px;">
+              <div class="config-item">
+                <label>Tốc độ (ms)</label>
+                <input type="number" id="directSpeed" value="400" min="100" max="2000" step="100">
+              </div>
+              <div class="config-item">
+                <label>Điểm mục tiêu</label>
+                <input type="number" id="directScore" value="8" min="0" max="10">
+              </div>
+            </div>
+            <div class="cmd-btn-row" style="margin-top:10px;align-items:center;flex-wrap:wrap;gap:8px;">
+              <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:160px;">
+                <span style="font-size:11px;color:var(--muted);white-space:nowrap;">God Mode:</span>
+                <div class="toggle-switch" id="directGodMode" style="flex-shrink:0;"><div class="toggle-thumb"></div></div>
+              </div>
+              <button class="cmd-btn cmd-btn-green" style="flex:2;min-width:160px;" onclick="sendStartWithAnswers()">🚀 GỬI ĐÁP ÁN &amp; START</button>
+            </div>
+            <div style="margin-top:8px;padding:6px 8px;background:rgba(34,197,94,0.05);border-radius:6px;border:1px solid rgba(34,197,94,0.2);font-size:10px;color:var(--muted);line-height:1.6;">
+              Gửi đáp án thẳng tới máy đích và chạy AUTO ngay — không cần lưu cloud.
+            </div>
+          </div>
+
+          <!-- TIN NHẮN -->
+          <div class="cmd-card full">
+            <div class="cmd-card-header">
+              <span class="cmd-card-icon">💬</span>
+              <span class="cmd-card-title">Tin nhắn hiển thị</span>
+            </div>
+            <textarea class="cmd-textarea" id="msgInput" placeholder="Nhập tin nhắn sẽ hiện lên màn hình máy đích..."></textarea>
+            <div class="cmd-btn-row">
+              <button class="cmd-btn cmd-btn-primary" onclick="sendMessage()">📤 GỬI TIN NHẮN</button>
+              <button class="cmd-btn cmd-btn-outline" onclick="sendCmd('clearMsg')">✕ XÓA TIN NHẮN</button>
+            </div>
+          </div>
+
+          <!-- ANSWERS CLOUD -->
+          <div class="cmd-card full">
+            <div class="cmd-card-header">
+              <span class="cmd-card-icon">☁️</span>
+              <span class="cmd-card-title">Gửi đáp án lên Cloud</span>
+            </div>
+            <div class="answers-target-input">
+              <input type="text" class="cmd-input" id="answerPracticeId" placeholder="Practice ID (để trống = auto lấy từ máy đích)" style="resize:none;">
+              <input type="number" class="cmd-input" id="answerDays" value="30" style="width:90px;resize:none;" placeholder="Ngày">
+            </div>
+            <textarea class="cmd-textarea" id="answersInput" placeholder='Dán đáp án vào đây&#10;["A.","B.","C.","D."]&#10;hoặc mỗi dòng một đáp án' style="min-height:70px;"></textarea>
+            <div class="cmd-btn-row">
+              <button class="cmd-btn cmd-btn-primary" onclick="uploadAnswers()">☁️ LƯU LÊN CLOUD</button>
+              <button class="cmd-btn cmd-btn-outline" onclick="sendCmd('loadCloud')">📡 BẢO MÁY ĐÍCH TẢI</button>
+            </div>
+          </div>
+
+          <!-- CẤU HÌNH -->
+          <div class="cmd-card full">
+            <div class="cmd-card-header">
+              <span class="cmd-card-icon">⚙️</span>
+              <span class="cmd-card-title">Cấu hình từ xa</span>
+            </div>
+            <div class="config-grid">
+              <div class="config-item">
+                <label>Tốc độ (ms)</label>
+                <input type="number" id="cfgSpeed" value="400" min="100" max="2000" step="100">
+              </div>
+              <div class="config-item">
+                <label>Điểm mục tiêu</label>
+                <input type="number" id="cfgScore" value="8" min="0" max="10">
+              </div>
+            </div>
+            <div class="cmd-btn-row">
+              <button class="cmd-btn cmd-btn-primary" onclick="sendConfig()">⚙️ ÁP DỤNG CẤU HÌNH</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LOG -->
+      <div class="log-panel" id="logPanel">
+        <div class="log-header">
+          <span>📋 ACTIVITY LOG</span>
+          <span class="log-clear" onclick="clearLog()">XÓA LOG</span>
+        </div>
+        <div id="logEntries"></div>
+      </div>
     </div>
+  </div>
+</div>
 
-    <script>
-        const API_BASE = 'https://eduso-answers.edusoauto-license.workers.dev';
-        let allAnswersData = [];
-        let showDetails = false;
+<!-- WORKER CONFIG MODAL -->
+<div id="workerModal">
+  <div class="modal-box">
+    <h3>⚙️ CẤU HÌNH WORKER</h3>
+    <label>Worker URL</label>
+    <input type="text" id="modalWorkerUrl" placeholder="https://your-worker.workers.dev">
+    <div class="modal-hint">URL của Cloudflare Worker bạn đã deploy.</div>
+    <label>Mật khẩu Admin</label>
+    <input type="password" id="modalAdminPass" placeholder="Nhập mật khẩu mới (để trống = giữ nguyên)">
+    <div class="modal-btns">
+      <button class="cmd-btn cmd-btn-primary" onclick="saveWorkerConfig()">LƯU</button>
+      <button class="cmd-btn cmd-btn-outline" onclick="closeWorkerModal()">HỦY</button>
+    </div>
+  </div>
+</div>
 
-        // Load stats on page load
-        loadStats();
-        setInterval(loadStats, 30000); // Refresh every 30s
+<!-- BROADCAST MODAL -->
+<div id="broadcastModal" style="position:fixed;inset:0;z-index:2000;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);">
+  <div class="modal-box">
+    <h3>📡 BROADCAST TẤT CẢ MÁY ONLINE</h3>
+    <label>Loại lệnh</label>
+    <select id="broadcastType" style="width:100%;padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font-mono);font-size:13px;outline:none;margin-bottom:8px;">
+      <option value="message">💬 Tin nhắn</option>
+      <option value="godmode_on">⚡ Bật God Mode</option>
+      <option value="godmode_off">⚡ Tắt God Mode</option>
+      <option value="start">▶ Start Auto</option>
+      <option value="stop">■ Stop Auto</option>
+      <option value="clearMsg">✕ Xóa tin nhắn</option>
+      <option value="loadCloud">☁️ Tải đáp án Cloud</option>
+    </select>
+    <label>Nội dung (nếu có)</label>
+    <textarea class="cmd-textarea" id="broadcastPayload" style="min-height:60px;" placeholder="Nhập tin nhắn..."></textarea>
+    <div class="modal-btns">
+      <button class="cmd-btn cmd-btn-primary" onclick="doBroadcast()">📡 BROADCAST</button>
+      <button class="cmd-btn cmd-btn-outline" onclick="document.getElementById('broadcastModal').style.display='none'">HỦY</button>
+    </div>
+  </div>
+</div>
 
-        async function loadStats() {
-            try {
-                const res = await fetch(`${API_BASE}/api/stats`);
-                const data = await res.json();
+<div class="toast-container" id="toastContainer"></div>
 
-                document.getElementById('totalAnswers').textContent = data.totalAnswers || 0;
-                document.getElementById('totalUsage').textContent = data.totalUsage || 0;
-                document.getElementById('expiringSoon').textContent = data.expiringSoon || 0;
-                
-                if (data.lastUpload) {
-                    const date = new Date(data.lastUpload);
-                    document.getElementById('lastUpload').textContent = date.toLocaleString('vi-VN');
-                } else {
-                    document.getElementById('lastUpload').textContent = 'Chưa có';
-                }
-            } catch (error) {
-                console.error('Error loading stats:', error);
-            }
+<script>
+const WORKER_URL = 'https://remote.shopduyhanh.workers.dev';
+let ADMIN_TOKEN = localStorage.getItem('kt_admin_token') || '';
+let selectedClient = null;
+let clients = [];
+let refreshInterval = null;
+
+// ─── AUTO LOGIN nếu đã có token lưu ───
+window.onload = () => {
+  if (ADMIN_TOKEN) {
+    fetch(`${WORKER_URL}/api/clients`, { headers: { 'X-Admin-Token': ADMIN_TOKEN } })
+      .then(r => r.json())
+      .then(d => {
+        if (d.clients !== undefined) {
+          document.getElementById('loginScreen').style.display = 'none';
+          document.getElementById('app').style.display = 'block';
+          document.getElementById('topbarWorkerUrl').textContent = WORKER_URL.replace('https://','');
+          startRefresh();
+          log('info', `Tự động đăng nhập thành công`);
+        } else {
+          ADMIN_TOKEN = '';
+          localStorage.removeItem('kt_admin_token');
         }
+      })
+      .catch(() => { ADMIN_TOKEN = ''; });
+  }
+};
 
-        async function searchAnswer() {
-            const practiceId = document.getElementById('searchPracticeId').value.trim();
-            const resultBox = document.getElementById('searchResult');
+// ─── LOGIN ───
+document.getElementById('loginBtn').onclick = async () => {
+  const pass = document.getElementById('passwordInput').value.trim();
+  if (!pass) { showLoginErr('Vui lòng nhập mật khẩu!'); return; }
 
-            if (!practiceId) {
-                showResult(resultBox, 'Vui lòng nhập Practice ID', 'error');
-                return;
-            }
+  const btn = document.getElementById('loginBtn');
+  btn.textContent = 'ĐANG KẾT NỐI...'; btn.disabled = true;
 
-            try {
-                const res = await fetch(`${API_BASE}/api/answers/${practiceId}`);
-                const data = await res.json();
+  try {
+    const res = await fetch(`${WORKER_URL}/api/admin/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pass })
+    });
+    const data = await res.json();
+    if (data.success) {
+      ADMIN_TOKEN = data.token;
+      localStorage.setItem('kt_admin_token', ADMIN_TOKEN);
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      document.getElementById('topbarWorkerUrl').textContent = WORKER_URL.replace('https://', '');
+      startRefresh();
+      log('info', `Đăng nhập thành công → ${WORKER_URL}`);
+    } else {
+      showLoginErr(data.error || 'Sai mật khẩu!');
+    }
+  } catch (e) {
+    showLoginErr('Không kết nối được Worker!');
+  } finally {
+    btn.textContent = 'ĐĂNG NHẬP'; btn.disabled = false;
+  }
+};
+document.getElementById('passwordInput').onkeydown = e => { if (e.key === 'Enter') document.getElementById('loginBtn').click(); };
+function showLoginErr(msg) {
+  const el = document.getElementById('loginErr');
+  el.textContent = msg; el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 3000);
+}
 
-                if (data.exists) {
-                    let html = `
-                        <div style="margin-bottom: 16px;">
-                            <span class="badge success">Tìm thấy</span>
-                            <span class="badge">Dùng ${data.usageCount} lần</span>
-                            <span class="badge warning">Còn ${data.daysRemaining} ngày</span>
-                        </div>
-                        <div style="margin-bottom: 12px;">
-                            <strong>Practice ID:</strong> ${data.practiceId}<br>
-                            <strong>Tạo lúc:</strong> ${new Date(data.createdAt).toLocaleString('vi-VN')}<br>
-                            <strong>Hết hạn:</strong> ${new Date(data.expiresAt).toLocaleString('vi-VN')}
-                        </div>
-                        <div style="margin-bottom: 12px;">
-                            <strong>Đáp án (${data.answers.length}):</strong>
-                        </div>
-                    `;
+document.getElementById('logoutBtn').onclick = () => {
+  ADMIN_TOKEN = ''; selectedClient = null; clients = [];
+  localStorage.removeItem('kt_admin_token');
+  if (refreshInterval) clearInterval(refreshInterval);
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+};
 
-                    data.answers.forEach((ans, i) => {
-                        html += `
-                            <div class="answer-item">
-                                <span class="answer-content">${i + 1}. ${JSON.stringify(ans)}</span>
-                            </div>
-                        `;
-                    });
+// ─── CLIENTS ───
+async function fetchClients() {
+  try {
+    const res = await fetch(`${WORKER_URL}/api/clients`, {
+      headers: { 'X-Admin-Token': ADMIN_TOKEN }
+    });
+    const data = await res.json();
+    clients = data.clients || [];
+    renderClients();
+  } catch (e) {
+    log('err', 'Lỗi tải danh sách máy: ' + e.message);
+  }
+}
 
-                    html += `
-                        <button onclick="loadToEditor('${data.practiceId}', ${JSON.stringify(JSON.stringify(data.answers))})" style="margin-top: 12px;">
-                            📝 Load vào Editor
-                        </button>
-                    `;
+function renderClients() {
+  const list = document.getElementById('clientList');
+  const online = clients.filter(c => c.online).length;
+  document.getElementById('onlineCount').textContent = online;
+  document.getElementById('offlineCount').textContent = clients.length - online;
+  document.getElementById('totalCount').textContent = clients.length;
 
-                    resultBox.innerHTML = html;
-                    resultBox.className = 'result-box show success';
-                } else {
-                    showResult(resultBox, data.message || 'Không tìm thấy đáp án', 'error');
-                }
-            } catch (error) {
-                showResult(resultBox, `Lỗi: ${error.message}`, 'error');
-            }
-        }
+  if (!clients.length) {
+    list.innerHTML = '<div class="no-clients"><span class="icon">📡</span>Chưa có máy nào kết nối<br>Hãy cài userscript trên máy đích</div>';
+    return;
+  }
 
-        function loadToEditor(practiceId, answersJson) {
-            document.getElementById('editPracticeId').value = practiceId;
-            document.getElementById('editAnswers').value = JSON.stringify(JSON.parse(answersJson), null, 2);
-            window.scrollTo({ top: document.getElementById('editPracticeId').offsetTop - 100, behavior: 'smooth' });
-        }
+  list.innerHTML = clients.map(c => `
+    <div class="client-card ${selectedClient?.id === c.id ? 'selected' : ''}"
+         onclick="selectClient('${c.id}')">
+      <div class="client-name">
+        <span class="online-badge ${c.online ? 'on' : 'off'}"></span>
+        ${escapeHtml(c.label || c.id)}
+      </div>
+      <div class="client-meta">
+        <span>ID: ${escapeHtml(c.id.slice(0,12))}${c.id.length > 12 ? '…' : ''}</span>
+        ${c.practiceId ? `<span>Practice: ${escapeHtml(c.practiceId.slice(0,10))}…</span>` : ''}
+        <span>Seen: ${timeAgo(c.lastSeen)}</span>
+      </div>
+    </div>
+  `).join('');
 
-        function validateJSON() {
-            const answersText = document.getElementById('editAnswers').value.trim();
-            const resultBox = document.getElementById('editResult');
+  // Update selected client data
+  if (selectedClient) {
+    const updated = clients.find(c => c.id === selectedClient.id);
+    if (updated) { selectedClient = updated; updateTargetPanel(); }
+  }
+}
 
-            if (!answersText) {
-                showResult(resultBox, 'Vui lòng nhập JSON', 'error');
-                return;
-            }
+function selectClient(id) {
+  selectedClient = clients.find(c => c.id === id);
+  if (!selectedClient) return;
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('cmdPanel').style.display = 'flex';
+  updateTargetPanel();
+  renderClients();
+  // Auto-fill practiceId
+  if (selectedClient.practiceId) {
+    document.getElementById('answerPracticeId').placeholder = `Auto: ${selectedClient.practiceId}`;
+  }
+  log('info', `Chọn máy: ${selectedClient.label || selectedClient.id}`);
+}
 
-            try {
-                const parsed = JSON.parse(answersText);
-                if (!Array.isArray(parsed)) {
-                    showResult(resultBox, 'JSON phải là một array', 'error');
-                    return;
-                }
+function updateTargetPanel() {
+  if (!selectedClient) return;
+  document.getElementById('targetName').textContent = selectedClient.label || selectedClient.id;
+  document.getElementById('targetId').textContent = selectedClient.id;
+  const statusEl = document.getElementById('targetStatus');
+  statusEl.textContent = selectedClient.online ? 'ONLINE' : 'OFFLINE';
+  statusEl.className = 'panel-target-status ' + (selectedClient.online ? 'on' : 'off');
+}
 
-                showResult(resultBox, `✅ JSON hợp lệ! Có ${parsed.length} đáp án`, 'success');
-            } catch (error) {
-                showResult(resultBox, `❌ JSON không hợp lệ: ${error.message}`, 'error');
-            }
-        }
+function startRefresh() {
+  fetchClients();
+  if (refreshInterval) clearInterval(refreshInterval);
+  refreshInterval = setInterval(fetchClients, 8000);
+}
 
-        async function uploadAnswer() {
-            const practiceId = document.getElementById('editPracticeId').value.trim();
-            const answersText = document.getElementById('editAnswers').value.trim();
-            const resultBox = document.getElementById('editResult');
+document.getElementById('refreshBtn').onclick = () => {
+  const btn = document.getElementById('refreshBtn');
+  btn.classList.add('spinning');
+  fetchClients().finally(() => setTimeout(() => btn.classList.remove('spinning'), 600));
+};
 
-            if (!practiceId || !answersText) {
-                showResult(resultBox, 'Vui lòng nhập đầy đủ Practice ID và Answers', 'error');
-                return;
-            }
+// ─── COMMANDS ───
+async function apiPost(endpoint, body) {
+  const res = await fetch(`${WORKER_URL}${endpoint}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Admin-Token': ADMIN_TOKEN },
+    body: JSON.stringify(body)
+  });
+  return res.json();
+}
 
-            let answers;
-            try {
-                answers = JSON.parse(answersText);
-                if (!Array.isArray(answers)) {
-                    showResult(resultBox, 'Answers phải là một array', 'error');
-                    return;
-                }
-            } catch (error) {
-                showResult(resultBox, `JSON không hợp lệ: ${error.message}`, 'error');
-                return;
-            }
+async function sendCmd(type, payload = null) {
+  if (!selectedClient) { toast('Chưa chọn máy đích!', 'err'); return; }
+  try {
+    const data = await apiPost(`/api/command/${encodeURIComponent(selectedClient.id)}`, { type, payload });
+    if (data.ok) {
+      toast(`✓ Đã gửi [${type}] → ${selectedClient.label || selectedClient.id}`, 'ok');
+      log('ok', `Lệnh [${type}] → ${selectedClient.label || selectedClient.id}${payload ? ': ' + JSON.stringify(payload) : ''}`);
+    }
+  } catch (e) {
+    toast('Lỗi gửi lệnh!', 'err');
+    log('err', `Lỗi gửi [${type}]: ${e.message}`);
+  }
+}
 
-            try {
-                const res = await fetch(`${API_BASE}/api/answers`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        practiceId,
-                        answers,
-                        fingerprint: 'admin-panel'
-                    })
-                });
+function sendGodMode() {
+  const on = document.getElementById('godModeSwitch').classList.contains('on');
+  sendCmd('godmode', { enabled: on });
+}
 
-                const data = await res.json();
+function sendMessage() {
+  const msg = document.getElementById('msgInput').value.trim();
+  if (!msg) { toast('Nhập tin nhắn trước!', 'err'); return; }
+  sendCmd('message', { text: msg });
+}
 
-                if (data.success) {
-                    showResult(resultBox, `✅ ${data.message} - ${data.answersCount} đáp án - Hết hạn: ${new Date(data.expiresAt).toLocaleString('vi-VN')}`, 'success');
-                    loadStats();
-                } else {
-                    showResult(resultBox, `❌ ${data.error || 'Lỗi không xác định'}`, 'error');
-                }
-            } catch (error) {
-                showResult(resultBox, `❌ Lỗi: ${error.message}`, 'error');
-            }
-        }
+function sendConfig() {
+  const speed = parseInt(document.getElementById('cfgSpeed').value) || 400;
+  const targetScore = parseInt(document.getElementById('cfgScore').value) || 8;
+  sendCmd('config', { speed, targetScore });
+}
 
-        async function manualCleanup() {
-            const resultBox = document.getElementById('cleanupResult');
-            
-            if (!confirm('Bạn có chắc muốn xóa tất cả đáp án cũ hơn 7 ngày?')) {
-                return;
-            }
+// ─── START WITH ANSWERS (gửi đáp án + start thẳng lên máy đích) ───
+function parseAnswersRaw(raw) {
+  try {
+    const p = JSON.parse(raw);
+    if (Array.isArray(p)) return p;
+  } catch {}
+  return raw.split('\n').map(l => l.trim()).filter(Boolean);
+}
 
-            try {
-                const res = await fetch(`${API_BASE}/api/cleanup`, {
-                    method: 'POST'
-                });
+async function sendStartWithAnswers() {
+  if (!selectedClient) { toast('Chưa chọn máy đích!', 'err'); return; }
+  const raw = document.getElementById('directAnswersInput').value.trim();
+  if (!raw) { toast('Nhập đáp án trước!', 'err'); return; }
+  const answers = parseAnswersRaw(raw);
+  if (!answers.length) { toast('Đáp án rỗng!', 'err'); return; }
 
-                const data = await res.json();
+  const speed = parseInt(document.getElementById('directSpeed').value) || 400;
+  const targetScore = parseInt(document.getElementById('directScore').value) || 8;
+  const godMode = document.getElementById('directGodMode').classList.contains('on');
 
-                if (data.success) {
-                    showResult(resultBox, `✅ ${data.message} - Đã xóa ${data.deletedCount} đáp án`, 'success');
-                    loadStats();
-                } else {
-                    showResult(resultBox, `❌ Lỗi cleanup`, 'error');
-                }
-            } catch (error) {
-                showResult(resultBox, `❌ Lỗi: ${error.message}`, 'error');
-            }
-        }
+  try {
+    const data = await apiPost(`/api/command/${encodeURIComponent(selectedClient.id)}`, {
+      type: 'startWithAnswers',
+      payload: { answers, speed, targetScore, godMode }
+    });
+    if (data.ok) {
+      toast(`🚀 Đã gửi ${answers.length} đáp án + START → ${selectedClient.label || selectedClient.id}`, 'ok');
+      log('ok', `startWithAnswers → ${selectedClient.label || selectedClient.id}: ${answers.length} đáp án, speed=${speed}, score=${targetScore}, god=${godMode}`);
+    }
+  } catch (e) {
+    toast('Lỗi gửi lệnh!', 'err');
+    log('err', `Lỗi startWithAnswers: ${e.message}`);
+  }
+}
 
-        function showResult(element, message, type) {
-            element.innerHTML = message;
-            element.className = `result-box show ${type}`;
-        }
+// directGodMode toggle
+document.getElementById('directGodMode').onclick = function() {
+  this.classList.toggle('on');
+};
 
-        // ==================== ALL ANSWERS LIST ====================
-        async function loadAllAnswers() {
-            const listContainer = document.getElementById('answersList');
-            listContainer.innerHTML = '<div class="loading"></div> Đang tải...';
+async function uploadAnswers() {
+  const raw = document.getElementById('answersInput').value.trim();
+  if (!raw) { toast('Nhập đáp án trước!', 'err'); return; }
 
-            try {
-                const res = await fetch(`${API_BASE}/api/answers/list`);
-                const data = await res.json();
+  let answers;
+  try {
+    answers = JSON.parse(raw);
+    if (!Array.isArray(answers)) throw new Error();
+  } catch {
+    answers = raw.split('\n').map(l => l.trim()).filter(Boolean);
+  }
 
-                if (!data.answers || data.answers.length === 0) {
-                    listContainer.innerHTML = '<div class="empty-state">📭 Chưa có đáp án nào</div>';
-                    return;
-                }
+  let practiceId = document.getElementById('answerPracticeId').value.trim();
+  if (!practiceId && selectedClient?.practiceId) practiceId = selectedClient.practiceId;
+  if (!practiceId) { toast('Cần nhập Practice ID!', 'err'); return; }
 
-                allAnswersData = data.answers;
-                renderAnswersList(data.answers);
+  const days = parseInt(document.getElementById('answerDays').value) || 30;
 
-            } catch (error) {
-                listContainer.innerHTML = `<div class="result-box show error">❌ Lỗi: ${error.message}</div>`;
-            }
-        }
+  try {
+    const data = await apiPost(`/api/answers/${encodeURIComponent(practiceId)}`, { answers, daysRemaining: days });
+    if (data.ok) {
+      toast(`☁️ Đã lưu ${data.count} đáp án cho ${practiceId}`, 'ok');
+      log('ok', `Lưu ${data.count} đáp án → ${practiceId} (${days} ngày)`);
+    }
+  } catch (e) {
+    toast('Lỗi lưu đáp án!', 'err');
+    log('err', `Lỗi lưu đáp án: ${e.message}`);
+  }
+}
 
-        function toggleListView() {
-            showDetails = !showDetails;
-            document.querySelectorAll('.answer-details').forEach(el => {
-                el.classList.toggle('show', showDetails);
-            });
-        }
+// God mode toggle
+document.getElementById('godModeSwitch').onclick = function() {
+  this.classList.toggle('on');
+};
 
-        function renderAnswersList(answers) {
-            const listContainer = document.getElementById('answersList');
-            
-            if (answers.length === 0) {
-                listContainer.innerHTML = '<div class="empty-state">📭 Không có đáp án nào</div>';
-                return;
-            }
+// ─── BROADCAST ───
+document.getElementById('broadcastBtn').onclick = () => {
+  document.getElementById('broadcastModal').style.display = 'flex';
+};
+async function doBroadcast() {
+  const type = document.getElementById('broadcastType').value;
+  const payload = document.getElementById('broadcastPayload').value.trim();
 
-            let html = answers.map(ans => {
-                const createdDate = new Date(ans.created_at).toLocaleString('vi-VN');
-                const daysAgo = Math.floor((Date.now() - ans.created_at) / (1000 * 60 * 60 * 24));
-                const daysRemaining = 7 - daysAgo;
+  let cmdType = type, cmdPayload = null;
+  if (type === 'message') { cmdPayload = { text: payload }; }
+  else if (type === 'godmode_on') { cmdType = 'godmode'; cmdPayload = { enabled: true }; }
+  else if (type === 'godmode_off') { cmdType = 'godmode'; cmdPayload = { enabled: false }; }
 
-                return `
-                    <div class="answer-list-item">
-                        <div class="answer-header">
-                            <div>
-                                <div class="answer-id">${ans.practice_id}</div>
-                                <div style="display: flex; gap: 8px; margin-top: 8px;">
-                                    <span class="badge">Dùng ${ans.usage_count || 0} lần</span>
-                                    <span class="badge ${daysRemaining <= 1 ? 'warning' : ''}">Còn ${daysRemaining} ngày</span>
-                                </div>
-                            </div>
-                            <div class="answer-actions">
-                                <button class="btn-sm" onclick="openPractice('${ans.practice_id}')" style="background: #8b5cf6;">🎯 Làm bài</button>
-                                <button class="btn-sm" onclick="viewAnswer('${ans.practice_id}')">👁️ Xem</button>
-                                <button class="btn-sm success" onclick="editAnswer('${ans.practice_id}')">✏️ Sửa</button>
-                                <button class="btn-sm danger" onclick="deleteAnswer('${ans.practice_id}')">🗑️ Xóa</button>
-                            </div>
-                        </div>
-                        <div class="answer-details ${showDetails ? 'show' : ''}">
-                            <div class="info-row">
-                                <span class="info-label">Tạo lúc:</span>
-                                <span class="info-value">${createdDate}</span>
-                            </div>
-                            <div class="info-row">
-                                <span class="info-label">Số câu:</span>
-                                <span class="info-value">${ans.answers_count || '?'}</span>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
+  try {
+    const data = await apiPost('/api/broadcast', { type: cmdType, payload: cmdPayload });
+    toast(`📡 Broadcast [${type}] → ${data.sent} máy`, 'ok');
+    log('ok', `Broadcast [${type}] → ${data.sent} máy online`);
+  } catch (e) {
+    toast('Lỗi broadcast!', 'err');
+    log('err', `Lỗi broadcast: ${e.message}`);
+  }
+  document.getElementById('broadcastModal').style.display = 'none';
+}
 
-            listContainer.innerHTML = html;
-        }
+// ─── TOPBAR WORKER LABEL (readonly, URL hardcoded) ───
+document.getElementById('topbarWorkerUrl').style.cursor = 'default';
+document.getElementById('topbarWorkerUrl').title = WORKER_URL;
 
-        async function viewAnswer(practiceId) {
-            const modal = document.getElementById('answerModal');
-            const modalBody = document.getElementById('modalBody');
-            document.getElementById('modalTitle').textContent = '👁️ Xem đáp án';
+// ─── LOG ───
+function log(type, msg) {
+  const entries = document.getElementById('logEntries');
+  const el = document.createElement('div');
+  el.className = `log-entry ${type}`;
+  const now = new Date();
+  el.innerHTML = `<span class="ts">${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}</span><span class="msg">${escapeHtml(msg)}</span>`;
+  entries.appendChild(el);
+  const panel = document.getElementById('logPanel');
+  panel.scrollTop = panel.scrollHeight;
+  // Keep only last 100 entries
+  while (entries.children.length > 100) entries.removeChild(entries.firstChild);
+}
+function clearLog() { document.getElementById('logEntries').innerHTML = ''; }
 
-            modalBody.innerHTML = '<div class="loading"></div> Đang tải...';
-            modal.classList.add('show');
+// ─── TOAST ───
+function toast(msg, type = 'ok') {
+  const container = document.getElementById('toastContainer');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  container.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
 
-            try {
-                const res = await fetch(`${API_BASE}/api/answers/${practiceId}`);
-                const data = await res.json();
-
-                if (data.exists) {
-                    let html = `
-                        <div style="margin-bottom: 16px;">
-                            <div class="info-row">
-                                <span class="info-label">Practice ID:</span>
-                                <span class="info-value">${data.practiceId}</span>
-                            </div>
-                            <div class="info-row">
-                                <span class="info-label">Tạo lúc:</span>
-                                <span class="info-value">${new Date(data.createdAt).toLocaleString('vi-VN')}</span>
-                            </div>
-                            <div class="info-row">
-                                <span class="info-label">Cập nhật:</span>
-                                <span class="info-value">${new Date(data.updatedAt).toLocaleString('vi-VN')}</span>
-                            </div>
-                            <div class="info-row">
-                                <span class="info-label">Hết hạn:</span>
-                                <span class="info-value">${new Date(data.expiresAt).toLocaleString('vi-VN')}</span>
-                            </div>
-                            <div class="info-row">
-                                <span class="info-label">Lượt dùng:</span>
-                                <span class="info-value">${data.usageCount}</span>
-                            </div>
-                            <div class="info-row">
-                                <span class="info-label">Còn lại:</span>
-                                <span class="info-value">${data.daysRemaining} ngày</span>
-                            </div>
-                        </div>
-                        <div class="divider"></div>
-                        <h4 style="margin-bottom: 12px;">Đáp án (${data.answers.length}):</h4>
-                    `;
-
-                    data.answers.forEach((ans, i) => {
-                        html += `
-                            <div class="answer-item">
-                                <span class="answer-content">${i + 1}. ${JSON.stringify(ans)}</span>
-                            </div>
-                        `;
-                    });
-
-                    html += `
-                        <div class="action-buttons">
-                            <button onclick="editAnswer('${data.practiceId}'); closeModal();">
-                                ✏️ Chỉnh sửa
-                            </button>
-                            <button class="danger" onclick="deleteAnswer('${data.practiceId}'); closeModal();">
-                                🗑️ Xóa
-                            </button>
-                        </div>
-                    `;
-
-                    modalBody.innerHTML = html;
-                } else {
-                    modalBody.innerHTML = `<div class="result-box show error">${data.message}</div>`;
-                }
-            } catch (error) {
-                modalBody.innerHTML = `<div class="result-box show error">❌ Lỗi: ${error.message}</div>`;
-            }
-        }
-
-        async function editAnswer(practiceId) {
-            try {
-                const res = await fetch(`${API_BASE}/api/answers/${practiceId}`);
-                const data = await res.json();
-
-                if (data.exists) {
-                    document.getElementById('editPracticeId').value = data.practiceId;
-                    document.getElementById('editAnswers').value = JSON.stringify(data.answers, null, 2);
-                    
-                    // Scroll to editor
-                    document.getElementById('editPracticeId').scrollIntoView({ 
-                        behavior: 'smooth', 
-                        block: 'center' 
-                    });
-                    
-                    // Highlight
-                    const section = document.getElementById('editPracticeId').closest('.section');
-                    section.style.border = '2px solid var(--accent)';
-                    setTimeout(() => {
-                        section.style.border = '1px solid var(--border)';
-                    }, 2000);
-                } else {
-                    alert('Không tìm thấy đáp án');
-                }
-            } catch (error) {
-                alert(`Lỗi: ${error.message}`);
-            }
-        }
-
-        async function deleteAnswer(practiceId) {
-            if (!confirm(`Bạn có chắc muốn xóa đáp án:\n${practiceId}\n\n⚠️ Hành động này không thể hoàn tác!`)) {
-                return;
-            }
-
-            try {
-                const res = await fetch(`${API_BASE}/api/answers/${practiceId}`, {
-                    method: 'DELETE'
-                });
-
-                const data = await res.json();
-
-                if (data.success) {
-                    alert(`✅ ${data.message}`);
-                    loadAllAnswers(); // Refresh list
-                    loadStats(); // Refresh stats
-                } else {
-                    alert(`❌ ${data.error || 'Lỗi xóa đáp án'}`);
-                }
-
-            } catch (error) {
-                alert(`Lỗi: ${error.message}`);
-            }
-        }
-
-        function closeModal() {
-            document.getElementById('answerModal').classList.remove('show');
-        }
-
-        // Close modal when clicking outside
-        document.getElementById('answerModal').addEventListener('click', (e) => {
-            if (e.target.id === 'answerModal') {
-                closeModal();
-            }
-        });
-    </script>
+// ─── UTILS ───
+function escapeHtml(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function timeAgo(ts) {
+  const diff = Math.floor((Date.now() - ts) / 1000);
+  if (diff < 10) return 'vừa xong';
+  if (diff < 60) return `${diff}s trước`;
+  if (diff < 3600) return `${Math.floor(diff/60)}m trước`;
+  return `${Math.floor(diff/3600)}h trước`;
+}
+</script>
 </body>
 </html>
