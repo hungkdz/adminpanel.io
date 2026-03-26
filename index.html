@@ -367,6 +367,15 @@
   .answers-target-input { display: flex; gap: 8px; margin-bottom: 8px; }
   .answers-target-input input { flex: 1; }
 
+  /* Screenshot */
+  #screenshotContainer img {
+    width: 100%; height: auto; display: block; border-radius: 6px;
+    cursor: pointer; transition: opacity 0.2s;
+  }
+  #screenshotContainer img:hover { opacity: 0.92; }
+  #screenshotDot.live  { background: var(--green)  !important; box-shadow: 0 0 6px var(--green); animation: pulse 2s infinite; }
+  #screenshotDot.stale { background: var(--yellow) !important; box-shadow: none; animation: none; }
+
   /* No-client placeholder */
   .no-clients { text-align: center; padding: 40px 16px; color: var(--muted); font-size: 12px; line-height: 2; }
   .no-clients .icon { font-size: 32px; display: block; margin-bottom: 8px; opacity: 0.3; }
@@ -556,6 +565,45 @@
               <button class="cmd-btn cmd-btn-primary" onclick="sendConfig()">⚙️ ÁP DỤNG CẤU HÌNH</button>
             </div>
           </div>
+
+          <!-- 📸 SCREENSHOT LIVE -->
+          <div class="cmd-card full" style="border-color:rgba(251,191,36,0.3);">
+            <div class="cmd-card-header" style="justify-content:space-between;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span class="cmd-card-icon">📸</span>
+                <span class="cmd-card-title" style="color:var(--yellow);">Màn hình máy đích</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span id="screenshotAge" style="font-size:10px;color:var(--muted);font-family:var(--font-mono);">—</span>
+                <div id="screenshotDot" style="width:7px;height:7px;border-radius:50%;background:var(--muted);flex-shrink:0;"></div>
+              </div>
+            </div>
+            <!-- Ảnh chụp màn hình -->
+            <div id="screenshotContainer" style="width:100%;border-radius:8px;overflow:hidden;background:var(--bg);border:1px solid var(--border);min-height:100px;display:flex;align-items:center;justify-content:center;margin-bottom:8px;">
+              <span id="screenshotPlaceholder" style="font-size:11px;color:var(--muted);padding:20px;">Nhấn "Bật chụp màn hình" để bắt đầu</span>
+            </div>
+            <div class="cmd-btn-row">
+              <button class="cmd-btn cmd-btn-primary" onclick="sendCmd('startCapture')" style="flex:1;">📸 BẬT CHỤP MÀN HÌNH</button>
+              <button class="cmd-btn cmd-btn-outline" onclick="sendCmd('stopCapture')" style="flex:1;">✕ DỪNG</button>
+            </div>
+            <div style="margin-top:6px;font-size:10px;color:var(--muted);line-height:1.6;">
+              Máy đích sẽ hiện dialog xin quyền chia sẻ màn hình — user chọn tab/cửa sổ muốn chia sẻ. Sau đó ảnh tự cập nhật mỗi 5s.
+            </div>
+          </div>
+
+          <!-- 📋 COPY Q&A -->
+          <div class="cmd-card full" style="border-color:rgba(34,197,94,0.25);">
+            <div class="cmd-card-header">
+              <span class="cmd-card-icon">📋</span>
+              <span class="cmd-card-title" style="color:var(--green);">Copy Q&A từ máy đích</span>
+            </div>
+            <div id="qaPreview" style="display:none;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;font-family:var(--font-mono);font-size:10px;color:var(--text);max-height:140px;overflow-y:auto;white-space:pre-wrap;line-height:1.6;margin-bottom:8px;"></div>
+            <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">Yêu cầu máy đích quét câu hỏi và gửi lên — sau đó copy về máy admin.</div>
+            <div class="cmd-btn-row">
+              <button class="cmd-btn cmd-btn-primary" onclick="requestCopyQA()">📡 YÊU CẦU MÁY ĐÍCh QUÉT</button>
+              <button class="cmd-btn cmd-btn-outline" id="copyQABtn" onclick="copyQAToClipboard()" style="display:none;">📋 COPY</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -683,6 +731,7 @@ document.getElementById('logoutBtn').onclick = () => {
   ADMIN_TOKEN = ''; selectedClient = null; clients = [];
   localStorage.removeItem('kt_admin_token');
   if (refreshInterval) clearInterval(refreshInterval);
+  stopScreenshotPolling();
   document.getElementById('app').style.display = 'none';
   document.getElementById('loginScreen').style.display = 'flex';
 };
@@ -746,6 +795,23 @@ function selectClient(id) {
   if (selectedClient.practiceId) {
     document.getElementById('answerPracticeId').placeholder = `Auto: ${selectedClient.practiceId}`;
   }
+  // Reset Q&A panel
+  _latestQAText = '';
+  const preview = document.getElementById('qaPreview');
+  const copyBtn = document.getElementById('copyQABtn');
+  if (preview) { preview.textContent = ''; preview.style.display = 'none'; }
+  if (copyBtn) copyBtn.style.display = 'none';
+  // Reset screenshot panel
+  const container = document.getElementById('screenshotContainer');
+  const placeholder = document.getElementById('screenshotPlaceholder');
+  if (container) { const img = container.querySelector('img'); if (img) img.remove(); }
+  if (placeholder) placeholder.style.display = 'block';
+  const dotEl = document.getElementById('screenshotDot');
+  const ageEl = document.getElementById('screenshotAge');
+  if (dotEl) { dotEl.className = ''; dotEl.style.cssText = 'width:7px;height:7px;border-radius:50%;background:var(--muted);flex-shrink:0;'; }
+  if (ageEl) ageEl.textContent = '—';
+  // Bắt đầu poll screenshot của máy này
+  startScreenshotPolling(selectedClient.id);
   log('info', `Chọn máy: ${selectedClient.label || selectedClient.id}`);
 }
 
@@ -913,6 +979,100 @@ async function doBroadcast() {
 // ─── TOPBAR WORKER LABEL (readonly, URL hardcoded) ───
 document.getElementById('topbarWorkerUrl').style.cursor = 'default';
 document.getElementById('topbarWorkerUrl').title = WORKER_URL;
+
+// ─── SCREENSHOT POLLING ───
+let screenshotInterval = null;
+let _latestQAText = '';
+
+function startScreenshotPolling(clientId) {
+  stopScreenshotPolling();
+  fetchScreenshot(clientId);
+  screenshotInterval = setInterval(() => fetchScreenshot(clientId), 5000);
+}
+
+function stopScreenshotPolling() {
+  if (screenshotInterval) { clearInterval(screenshotInterval); screenshotInterval = null; }
+}
+
+async function fetchScreenshot(clientId) {
+  try {
+    const res = await fetch(`${WORKER_URL}/api/screenshot/${encodeURIComponent(clientId)}`, {
+      headers: { 'X-Admin-Token': ADMIN_TOKEN }
+    });
+    const data = await res.json();
+    const container  = document.getElementById('screenshotContainer');
+    const dot        = document.getElementById('screenshotDot');
+    const age        = document.getElementById('screenshotAge');
+    const placeholder = document.getElementById('screenshotPlaceholder');
+    if (!container) return;
+
+    if (data.exists && data.data && typeof data.data === 'string' && data.data.startsWith('data:')) {
+      const ageSecs = Math.round((Date.now() - data.takenAt) / 1000);
+      age.textContent = ageSecs < 60 ? `${ageSecs}s trước` : `${Math.round(ageSecs/60)}m trước`;
+      dot.className = ageSecs < 12 ? 'live' : 'stale';
+
+      if (placeholder) placeholder.style.display = 'none';
+      let img = container.querySelector('img');
+      if (!img) {
+        img = document.createElement('img');
+        img.title = 'Click để xem ảnh đầy đủ';
+        img.onclick = () => { const w = window.open(); w.document.write(`<img src="${img.src}" style="max-width:100%">`); };
+        container.appendChild(img);
+      }
+      // Chỉ update src nếu ảnh mới (tránh flicker)
+      if (img.dataset.takenAt !== String(data.takenAt)) {
+        img.src = data.data;
+        img.dataset.takenAt = data.takenAt;
+      }
+    }
+  } catch(e) {}
+}
+
+// ─── COPY Q&A ───
+async function requestCopyQA() {
+  if (!selectedClient) { toast('Chưa chọn máy đích!', 'err'); return; }
+  // Gửi lệnh copyQA tới máy đích
+  try {
+    await apiPost(`/api/command/${encodeURIComponent(selectedClient.id)}`, { type: 'copyQA', payload: null });
+    toast('📡 Đã yêu cầu — đợi máy đích quét...', 'ok');
+    log('info', `Yêu cầu copyQA → ${selectedClient.label || selectedClient.id}`);
+    // Sau 3s thử lấy kết quả
+    setTimeout(() => fetchQAResult(selectedClient.id), 3000);
+    setTimeout(() => fetchQAResult(selectedClient.id), 6000);
+  } catch(e) {
+    toast('Lỗi gửi lệnh!', 'err');
+  }
+}
+
+async function fetchQAResult(clientId) {
+  try {
+    const res = await fetch(`${WORKER_URL}/api/copyqa/${encodeURIComponent(clientId)}`, {
+      headers: { 'X-Admin-Token': ADMIN_TOKEN }
+    });
+    const data = await res.json();
+    if (data.exists && data.text) {
+      _latestQAText = data.text;
+      const preview = document.getElementById('qaPreview');
+      const copyBtn = document.getElementById('copyQABtn');
+      if (preview) { preview.textContent = data.text; preview.style.display = 'block'; }
+      if (copyBtn) copyBtn.style.display = 'inline-flex';
+      log('ok', `Nhận Q&A từ ${clientId} (${data.text.length} ký tự)`);
+    }
+  } catch(e) {}
+}
+
+function copyQAToClipboard() {
+  if (!_latestQAText) return;
+  navigator.clipboard.writeText(_latestQAText)
+    .then(() => toast('📋 Đã copy Q&A!', 'ok'))
+    .catch(() => {
+      const ta = document.createElement('textarea');
+      ta.value = _latestQAText;
+      ta.style.cssText = 'position:fixed;opacity:0;';
+      document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+      toast('📋 Đã copy Q&A!', 'ok');
+    });
+}
 
 // ─── LOG ───
 function log(type, msg) {
