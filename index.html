@@ -367,14 +367,25 @@
   .answers-target-input { display: flex; gap: 8px; margin-bottom: 8px; }
   .answers-target-input input { flex: 1; }
 
-  /* Screenshot */
-  #screenshotContainer img {
-    width: 100%; height: auto; display: block; border-radius: 6px;
-    cursor: pointer; transition: opacity 0.2s;
+  /* Snapshot */
+  #screenshotDot.live  { background: var(--green)  !important; box-shadow: 0 0 6px var(--green); }
+  #screenshotDot.stale { background: var(--yellow) !important; }
+  .snap-chip {
+    padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 700;
+    font-family: var(--font-mono);
   }
-  #screenshotContainer img:hover { opacity: 0.92; }
-  #screenshotDot.live  { background: var(--green)  !important; box-shadow: 0 0 6px var(--green); animation: pulse 2s infinite; }
-  #screenshotDot.stale { background: var(--yellow) !important; box-shadow: none; animation: none; }
+  .snap-chip.running { background:rgba(34,197,94,0.12);  border:1px solid rgba(34,197,94,0.4);  color:var(--green);  }
+  .snap-chip.stopped { background:rgba(100,116,139,0.12);border:1px solid rgba(100,116,139,0.3);color:var(--muted);  }
+  .snap-chip.god     { background:rgba(251,191,36,0.12); border:1px solid rgba(251,191,36,0.4); color:var(--yellow); }
+  .snap-chip.info    { background:rgba(140,100,255,0.12);border:1px solid rgba(140,100,255,0.3);color:var(--accent); }
+  .snap-q-row { display:flex;align-items:center;gap:8px;padding:5px 10px;border-bottom:1px solid rgba(255,255,255,0.04);font-size:11px; }
+  .snap-q-row:last-child { border-bottom:none; }
+  .snap-q-num  { font-family:var(--font-mono);font-size:10px;color:var(--muted);flex-shrink:0;width:24px;text-align:right; }
+  .snap-q-icon { flex-shrink:0;font-size:12px; }
+  .snap-q-title{ flex:1;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+  .snap-q-ans  { font-family:var(--font-mono);font-size:10px;color:var(--accent);flex-shrink:0;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+  #snapQuestions::-webkit-scrollbar { width:3px; }
+  #snapQuestions::-webkit-scrollbar-thumb { background:var(--border);border-radius:2px; }
 
   /* No-client placeholder */
   .no-clients { text-align: center; padding: 40px 16px; color: var(--muted); font-size: 12px; line-height: 2; }
@@ -566,28 +577,40 @@
             </div>
           </div>
 
-          <!-- 📸 SCREENSHOT LIVE -->
+          <!-- 📊 DOM SNAPSHOT -->
           <div class="cmd-card full" style="border-color:rgba(251,191,36,0.3);">
             <div class="cmd-card-header" style="justify-content:space-between;">
               <div style="display:flex;align-items:center;gap:8px;">
-                <span class="cmd-card-icon">📸</span>
-                <span class="cmd-card-title" style="color:var(--yellow);">Màn hình máy đích</span>
+                <span class="cmd-card-icon">📊</span>
+                <span class="cmd-card-title" style="color:var(--yellow);">Trạng thái máy đích</span>
               </div>
               <div style="display:flex;align-items:center;gap:8px;">
                 <span id="screenshotAge" style="font-size:10px;color:var(--muted);font-family:var(--font-mono);">—</span>
                 <div id="screenshotDot" style="width:7px;height:7px;border-radius:50%;background:var(--muted);flex-shrink:0;"></div>
               </div>
             </div>
-            <!-- Ảnh chụp màn hình -->
-            <div id="screenshotContainer" style="width:100%;border-radius:8px;overflow:hidden;background:var(--bg);border:1px solid var(--border);min-height:100px;display:flex;align-items:center;justify-content:center;margin-bottom:8px;">
-              <span id="screenshotPlaceholder" style="font-size:11px;color:var(--muted);padding:20px;">Nhấn "Bật chụp màn hình" để bắt đầu</span>
+
+            <div id="snapEmpty" style="font-size:11px;color:var(--muted);text-align:center;padding:20px 0;">Nhấn nút bên dưới để lấy trạng thái từ máy đích</div>
+
+            <div id="snapContent" style="display:none;">
+              <!-- Progress bar -->
+              <div style="margin-bottom:10px;">
+                <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
+                  <span id="snapProgressLabel" style="font-size:11px;color:var(--text);font-weight:600;"></span>
+                  <span id="snapProgressPct" style="font-size:12px;color:var(--accent);font-weight:800;font-family:var(--font-mono);"></span>
+                </div>
+                <div style="height:7px;background:var(--bg);border-radius:4px;overflow:hidden;border:1px solid var(--border);">
+                  <div id="snapProgressBar" style="height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:4px;transition:width 0.4s;width:0%;"></div>
+                </div>
+              </div>
+              <!-- Status chips -->
+              <div id="snapChips" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;"></div>
+              <!-- Question list -->
+              <div id="snapQuestions" style="max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;background:var(--bg);"></div>
             </div>
-            <div class="cmd-btn-row">
-              <button class="cmd-btn cmd-btn-primary" onclick="sendCmd('startCapture')" style="flex:1;">📸 BẬT CHỤP MÀN HÌNH</button>
-              <button class="cmd-btn cmd-btn-outline" onclick="sendCmd('stopCapture')" style="flex:1;">✕ DỪNG</button>
-            </div>
-            <div style="margin-top:6px;font-size:10px;color:var(--muted);line-height:1.6;">
-              Máy đích sẽ hiện dialog xin quyền chia sẻ màn hình — user chọn tab/cửa sổ muốn chia sẻ. Sau đó ảnh tự cập nhật mỗi 5s.
+
+            <div class="cmd-btn-row" style="margin-top:10px;">
+              <button class="cmd-btn cmd-btn-primary" style="flex:1;" onclick="requestSnapshot(this)">📊 LẤY SNAPSHOT</button>
             </div>
           </div>
 
@@ -801,11 +824,11 @@ function selectClient(id) {
   const copyBtn = document.getElementById('copyQABtn');
   if (preview) { preview.textContent = ''; preview.style.display = 'none'; }
   if (copyBtn) copyBtn.style.display = 'none';
-  // Reset screenshot panel
-  const container = document.getElementById('screenshotContainer');
-  const placeholder = document.getElementById('screenshotPlaceholder');
-  if (container) { const img = container.querySelector('img'); if (img) img.remove(); }
-  if (placeholder) placeholder.style.display = 'block';
+  // Reset snapshot panel
+  const snapEmpty   = document.getElementById('snapEmpty');
+  const snapContent = document.getElementById('snapContent');
+  if (snapEmpty)   { snapEmpty.style.display = 'block'; }
+  if (snapContent) { snapContent.style.display = 'none'; }
   const dotEl = document.getElementById('screenshotDot');
   const ageEl = document.getElementById('screenshotAge');
   if (dotEl) { dotEl.className = ''; dotEl.style.cssText = 'width:7px;height:7px;border-radius:50%;background:var(--muted);flex-shrink:0;'; }
@@ -980,52 +1003,104 @@ async function doBroadcast() {
 document.getElementById('topbarWorkerUrl').style.cursor = 'default';
 document.getElementById('topbarWorkerUrl').title = WORKER_URL;
 
-// ─── SCREENSHOT POLLING ───
-let screenshotInterval = null;
+// ─── DOM SNAPSHOT (on-demand) ───
+let screenshotInterval = null; // unused now but keep for stopScreenshotPolling compat
 let _latestQAText = '';
 
-function startScreenshotPolling(clientId) {
-  stopScreenshotPolling();
-  fetchScreenshot(clientId);
-  screenshotInterval = setInterval(() => fetchScreenshot(clientId), 5000);
-}
+function startScreenshotPolling() { /* no-op — snapshot is on-demand */ }
+function stopScreenshotPolling()  { /* no-op */ }
 
-function stopScreenshotPolling() {
-  if (screenshotInterval) { clearInterval(screenshotInterval); screenshotInterval = null; }
-}
+async function requestSnapshot(btn) {
+  if (!selectedClient) { toast('Chưa chọn máy đích!', 'err'); return; }
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Đang lấy...'; }
 
-async function fetchScreenshot(clientId) {
+  const clientId = selectedClient.id;
+  const sentAt = Date.now();
+
   try {
-    const res = await fetch(`${WORKER_URL}/api/screenshot/${encodeURIComponent(clientId)}`, {
-      headers: { 'X-Admin-Token': ADMIN_TOKEN }
-    });
-    const data = await res.json();
-    const container  = document.getElementById('screenshotContainer');
-    const dot        = document.getElementById('screenshotDot');
-    const age        = document.getElementById('screenshotAge');
-    const placeholder = document.getElementById('screenshotPlaceholder');
-    if (!container) return;
+    await apiPost(`/api/command/${encodeURIComponent(clientId)}`, { type: 'getSnapshot', payload: null });
+  } catch(e) {
+    toast('Lỗi gửi lệnh!', 'err');
+    if (btn) { btn.disabled = false; btn.textContent = '📊 LẤY SNAPSHOT'; }
+    return;
+  }
 
-    if (data.exists && data.data && typeof data.data === 'string' && data.data.startsWith('data:')) {
-      const ageSecs = Math.round((Date.now() - data.takenAt) / 1000);
-      age.textContent = ageSecs < 60 ? `${ageSecs}s trước` : `${Math.round(ageSecs/60)}m trước`;
-      dot.className = ageSecs < 12 ? 'live' : 'stale';
+  // Poll cho đến khi nhận được snapshot mới hơn thời điểm gửi lệnh
+  let attempts = 0;
+  const maxAttempts = 10; // tối đa 10s
 
-      if (placeholder) placeholder.style.display = 'none';
-      let img = container.querySelector('img');
-      if (!img) {
-        img = document.createElement('img');
-        img.title = 'Click để xem ảnh đầy đủ';
-        img.onclick = () => { const w = window.open(); w.document.write(`<img src="${img.src}" style="max-width:100%">`); };
-        container.appendChild(img);
+  const poll = async () => {
+    attempts++;
+    try {
+      const res = await fetch(`${WORKER_URL}/api/screenshot/${encodeURIComponent(clientId)}`, {
+        headers: { 'X-Admin-Token': ADMIN_TOKEN }
+      });
+      const data = await res.json();
+
+      if (data.exists && data.data && typeof data.data === 'object' && data.takenAt > sentAt) {
+        // Có snapshot mới
+        renderSnapshot(data.data, data.takenAt);
+        if (btn) { btn.disabled = false; btn.textContent = '📊 LẤY SNAPSHOT'; }
+        log('ok', `Snapshot nhận được sau ${attempts}s — ${data.data.userName || clientId}`);
+        return;
       }
-      // Chỉ update src nếu ảnh mới (tránh flicker)
-      if (img.dataset.takenAt !== String(data.takenAt)) {
-        img.src = data.data;
-        img.dataset.takenAt = data.takenAt;
-      }
+    } catch(e) {}
+
+    if (attempts < maxAttempts) {
+      setTimeout(poll, 1000);
+    } else {
+      toast('⚠️ Máy đích không phản hồi', 'err');
+      if (btn) { btn.disabled = false; btn.textContent = '📊 LẤY SNAPSHOT'; }
     }
-  } catch(e) {}
+  };
+
+  // Bắt đầu poll sau 1s
+  setTimeout(poll, 1000);
+}
+
+function renderSnapshot(snap, takenAt) {
+  const dot     = document.getElementById('screenshotDot');
+  const age     = document.getElementById('screenshotAge');
+  const empty   = document.getElementById('snapEmpty');
+  const content = document.getElementById('snapContent');
+  if (!dot || !empty || !content) return;
+
+  const ageSecs = Math.round((Date.now() - takenAt) / 1000);
+  age.textContent = ageSecs < 60 ? `${ageSecs}s trước` : `${Math.round(ageSecs/60)}m trước`;
+  dot.className = ageSecs < 30 ? 'live' : 'stale';
+
+  empty.style.display = 'none';
+  content.style.display = 'block';
+
+  // Progress
+  const total    = snap.totalQuestions || 0;
+  const answered = snap.answeredQuestions || 0;
+  const pct      = total > 0 ? Math.round(answered / total * 100) : 0;
+  document.getElementById('snapProgressLabel').textContent = `${answered}/${total} câu đã làm`;
+  document.getElementById('snapProgressPct').textContent   = `${pct}%`;
+  document.getElementById('snapProgressBar').style.width   = `${pct}%`;
+
+  // Chips
+  const chips = document.getElementById('snapChips');
+  if (chips) chips.innerHTML = [
+    snap.isRunning ? '<span class="snap-chip running">▶ ĐANG CHẠY</span>' : '<span class="snap-chip stopped">■ DỪNG</span>',
+    snap.godMode   ? '<span class="snap-chip god">⚡ GOD MODE</span>'     : '<span class="snap-chip info">🎯 NORMAL</span>',
+    `<span class="snap-chip info">${snap.speed || 400}ms</span>`,
+    `<span class="snap-chip info">Đ: ${snap.targetScore ?? 8}/10</span>`,
+  ].join('');
+
+  // Question list
+  const qList = document.getElementById('snapQuestions');
+  if (qList && snap.questions?.length) {
+    qList.innerHTML = snap.questions.map(q => `
+      <div class="snap-q-row">
+        <span class="snap-q-num">${q.idx}</span>
+        <span class="snap-q-icon">${q.answered ? '✅' : '⬜'}</span>
+        <span class="snap-q-title" title="${escapeHtml(q.title)}">${escapeHtml(q.title)}</span>
+        ${q.selectedAnswer ? `<span class="snap-q-ans" title="${escapeHtml(q.selectedAnswer)}">${escapeHtml(q.selectedAnswer)}</span>` : ''}
+      </div>`).join('');
+  }
+  log('ok', `Snapshot: ${answered}/${total} câu — ${snap.userName || clientId}`);
 }
 
 // ─── COPY Q&A ───
