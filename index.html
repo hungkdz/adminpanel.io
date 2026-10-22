@@ -1,1190 +1,182 @@
 <!DOCTYPE html>
-<html lang="vi">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KT Support — Admin Panel v2.2</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<html lang="vi"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Trebuchet 3D – Máy bắn đá</title>
 <style>
-  :root {
-    --bg: #0a0a0f;
-    --surface: #111118;
-    --surface2: #1a1a24;
-    --border: rgba(140, 100, 255, 0.18);
-    --accent: #8c64ff;
-    --accent2: #c084fc;
-    --green: #22c55e;
-    --red: #ef4444;
-    --yellow: #fbbf24;
-    --text: #e2e8f0;
-    --muted: #64748b;
-    --online: #22c55e;
-    --offline: #ef4444;
-    --font-mono: 'JetBrains Mono', monospace;
-    --font-sans: 'DM Sans', sans-serif;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font-sans); }
-
-  /* ─── SCANLINE + GRID BACKGROUND ─── */
-  body::before {
-    content: '';
-    position: fixed; inset: 0; z-index: 0; pointer-events: none;
-    background-image:
-      linear-gradient(rgba(140,100,255,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(140,100,255,0.03) 1px, transparent 1px);
-    background-size: 40px 40px;
-  }
-  body::after {
-    content: '';
-    position: fixed; inset: 0; z-index: 0; pointer-events: none;
-    background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(140,100,255,0.12), transparent);
-  }
-
-  /* ─── LOGIN SCREEN ─── */
-  #loginScreen {
-    position: fixed; inset: 0; z-index: 1000;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .login-box {
-    position: relative; z-index: 1;
-    width: 360px; padding: 44px 36px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    box-shadow: 0 0 80px rgba(140,100,255,0.1), inset 0 1px 0 rgba(255,255,255,0.05);
-  }
-  .login-logo {
-    text-align: center; margin-bottom: 32px;
-  }
-  .login-logo .icon { font-size: 48px; line-height: 1; margin-bottom: 10px; display: block; }
-  .login-logo h1 {
-    font-family: var(--font-mono); font-size: 22px; font-weight: 800;
-    letter-spacing: 3px; text-transform: uppercase;
-    background: linear-gradient(135deg, #8c64ff, #c084fc);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  }
-  .login-logo p { color: var(--muted); font-size: 12px; margin-top: 4px; letter-spacing: 1px; }
-  .login-field { margin-bottom: 16px; }
-  .login-field label { display: block; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
-  .login-field input {
-    width: 100%; padding: 12px 16px;
-    background: var(--bg); border: 1px solid var(--border);
-    border-radius: 10px; color: var(--text);
-    font-family: var(--font-mono); font-size: 14px; outline: none;
-    transition: border-color 0.2s;
-  }
-  .login-field input:focus { border-color: var(--accent); }
-  .login-field input.err { border-color: var(--red); }
-  .login-btn {
-    width: 100%; padding: 13px;
-    background: linear-gradient(135deg, #8c64ff, #c084fc);
-    border: none; border-radius: 10px;
-    color: #fff; font-family: var(--font-mono); font-weight: 700; font-size: 13px;
-    letter-spacing: 2px; text-transform: uppercase; cursor: pointer;
-    transition: opacity 0.2s, transform 0.1s;
-    margin-top: 8px;
-  }
-  .login-btn:hover { opacity: 0.9; }
-  .login-btn:active { transform: scale(0.98); }
-  .login-err { color: var(--red); font-size: 11px; text-align: center; margin-top: 10px; display: none; }
-
-  /* ─── MAIN APP ─── */
-  #app { display: none; position: relative; z-index: 1; height: 100vh; overflow: hidden; }
-
-  /* ─── TOPBAR ─── */
-  .topbar {
-    height: 56px; display: flex; align-items: center; justify-content: space-between;
-    padding: 0 24px;
-    background: var(--surface); border-bottom: 1px solid var(--border);
-    position: relative; z-index: 10;
-  }
-  .topbar-left { display: flex; align-items: center; gap: 12px; }
-  .topbar-title {
-    font-family: var(--font-mono); font-size: 14px; font-weight: 800;
-    letter-spacing: 2px; text-transform: uppercase;
-    background: linear-gradient(135deg, #8c64ff, #c084fc);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  }
-  .topbar-dot {
-    width: 8px; height: 8px; border-radius: 50%; background: var(--green);
-    box-shadow: 0 0 8px var(--green); animation: pulse 2s infinite;
-  }
-  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
-  .topbar-right { display: flex; align-items: center; gap: 12px; }
-  .topbar-worker {
-    font-family: var(--font-mono); font-size: 11px; color: var(--muted);
-    background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
-    padding: 4px 10px; cursor: pointer; transition: border-color 0.2s;
-    max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  }
-  .topbar-worker:hover { border-color: var(--accent); }
-  .topbar-logout {
-    padding: 6px 14px; background: transparent; border: 1px solid var(--border);
-    border-radius: 8px; color: var(--muted); font-size: 12px; font-family: var(--font-mono);
-    cursor: pointer; transition: all 0.2s;
-  }
-  .topbar-logout:hover { border-color: var(--red); color: var(--red); }
-
-  /* ─── LAYOUT ─── */
-  .main-layout {
-    display: grid; grid-template-columns: 280px 1fr;
-    height: calc(100vh - 56px); overflow: hidden;
-  }
-
-  /* ─── SIDEBAR ─── */
-  .sidebar {
-    background: var(--surface); border-right: 1px solid var(--border);
-    display: flex; flex-direction: column; overflow: hidden;
-  }
-  .sidebar-header {
-    padding: 16px 16px 12px;
-    border-bottom: 1px solid var(--border);
-  }
-  .sidebar-header h2 { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); }
-  .sidebar-stats { display: flex; gap: 8px; margin-top: 10px; }
-  .stat-chip {
-    flex: 1; padding: 8px; border-radius: 8px; background: var(--bg);
-    border: 1px solid var(--border); text-align: center;
-  }
-  .stat-chip .val { font-family: var(--font-mono); font-size: 20px; font-weight: 800; }
-  .stat-chip .lbl { font-size: 10px; color: var(--muted); }
-  .stat-chip.green .val { color: var(--green); }
-  .stat-chip.red .val { color: var(--red); }
-  .refresh-btn {
-    width: 100%; margin-top: 10px; padding: 8px; border-radius: 8px;
-    background: var(--bg); border: 1px solid var(--border);
-    color: var(--muted); font-size: 11px; font-family: var(--font-mono);
-    cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px;
-  }
-  .refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
-  .refresh-icon { transition: transform 0.4s; }
-  .refresh-btn.spinning .refresh-icon { animation: spin 0.8s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  .client-list { flex: 1; overflow-y: auto; padding: 8px; }
-  .client-list::-webkit-scrollbar { width: 4px; }
-  .client-list::-webkit-scrollbar-track { background: transparent; }
-  .client-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
-  .client-card {
-    padding: 12px 14px; border-radius: 10px; margin-bottom: 6px;
-    background: var(--bg); border: 1px solid var(--border);
-    cursor: pointer; transition: all 0.15s; position: relative;
-  }
-  .client-card:hover { border-color: rgba(140,100,255,0.4); background: #0f0f1a; }
-  .client-card.selected { border-color: var(--accent); background: rgba(140,100,255,0.06); }
-  .client-card.selected::before {
-    content: '';
-    position: absolute; left: 0; top: 4px; bottom: 4px;
-    width: 3px; background: var(--accent); border-radius: 0 2px 2px 0;
-  }
-  .client-name { font-size: 13px; font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
-  .online-badge {
-    width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
-    box-shadow: 0 0 6px currentColor;
-  }
-  .online-badge.on { background: var(--green); color: var(--green); }
-  .online-badge.off { background: var(--offline); color: var(--offline); }
-  .client-meta { font-size: 10px; color: var(--muted); font-family: var(--font-mono); }
-  .client-meta span { display: block; }
-
-  .broadcast-btn {
-    margin: 8px; padding: 10px; border-radius: 8px;
-    background: rgba(140,100,255,0.1); border: 1px solid rgba(140,100,255,0.3);
-    color: var(--accent); font-size: 11px; font-family: var(--font-mono); font-weight: 700;
-    cursor: pointer; text-align: center; transition: all 0.2s;
-    letter-spacing: 1px;
-  }
-  .broadcast-btn:hover { background: rgba(140,100,255,0.2); border-color: var(--accent); }
-
-  /* ─── CONTENT ─── */
-  .content { display: flex; flex-direction: column; overflow: hidden; }
-
-  /* ─── EMPTY STATE ─── */
-  .empty-state {
-    flex: 1; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 12px; color: var(--muted);
-  }
-  .empty-state .icon { font-size: 48px; opacity: 0.3; }
-  .empty-state p { font-size: 13px; }
-
-  /* ─── COMMAND PANEL ─── */
-  .cmd-panel { flex: 1; overflow-y: auto; padding: 20px; display: none; flex-direction: column; gap: 16px; }
-  .cmd-panel::-webkit-scrollbar { width: 4px; }
-  .cmd-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
-  .panel-target {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px;
-    display: flex; align-items: center; justify-content: space-between;
-  }
-  .panel-target-left { display: flex; align-items: center; gap: 10px; }
-  .panel-target-name { font-size: 15px; font-weight: 700; }
-  .panel-target-id { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
-  .panel-target-status {
-    padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700;
-    font-family: var(--font-mono); letter-spacing: 1px;
-  }
-  .panel-target-status.on { background: rgba(34,197,94,0.1); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
-  .panel-target-status.off { background: rgba(239,68,68,0.1); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
-
-  .cmd-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-
-  .cmd-card {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
-    padding: 16px; transition: border-color 0.2s;
-  }
-  .cmd-card:hover { border-color: rgba(140,100,255,0.3); }
-  .cmd-card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
-  .cmd-card-icon { font-size: 18px; }
-  .cmd-card-title { font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
-  .cmd-card.full { grid-column: 1 / -1; }
-
-  /* Toggle */
-  .toggle-row { display: flex; align-items: center; justify-content: space-between; }
-  .toggle-label { font-size: 13px; font-weight: 500; }
-  .toggle-switch {
-    position: relative; width: 44px; height: 24px; cursor: pointer;
-    background: var(--bg); border: 1px solid var(--border);
-    border-radius: 24px; transition: all 0.2s;
-  }
-  .toggle-switch.on { background: var(--accent); border-color: var(--accent); }
-  .toggle-thumb {
-    position: absolute; top: 3px; left: 3px;
-    width: 16px; height: 16px; border-radius: 50%;
-    background: var(--muted); transition: left 0.2s, background 0.2s;
-  }
-  .toggle-switch.on .toggle-thumb { left: 23px; background: #fff; }
-  .toggle-desc { font-size: 11px; color: var(--muted); margin-top: 6px; }
-
-  /* Buttons */
-  .cmd-btn {
-    padding: 9px 16px; border-radius: 8px; font-size: 12px; font-weight: 700;
-    font-family: var(--font-mono); cursor: pointer; border: none;
-    transition: all 0.15s; letter-spacing: 1px;
-  }
-  .cmd-btn-primary { background: var(--accent); color: #fff; }
-  .cmd-btn-primary:hover { background: #9f78ff; }
-  .cmd-btn-green { background: var(--green); color: #fff; }
-  .cmd-btn-green:hover { background: #16a34a; }
-  .cmd-btn-red { background: var(--red); color: #fff; }
-  .cmd-btn-red:hover { background: #dc2626; }
-  .cmd-btn-outline {
-    background: transparent; color: var(--accent);
-    border: 1px solid rgba(140,100,255,0.4); padding: 9px 16px;
-    border-radius: 8px; font-size: 12px; font-weight: 700;
-    font-family: var(--font-mono); cursor: pointer; transition: all 0.15s;
-  }
-  .cmd-btn-outline:hover { background: rgba(140,100,255,0.1); }
-  .cmd-btn-full { width: 100%; }
-  .cmd-btn-row { display: flex; gap: 8px; margin-top: 10px; }
-
-  /* Inputs */
-  .cmd-textarea, .cmd-input {
-    width: 100%; padding: 10px 12px; border-radius: 8px;
-    background: var(--bg); border: 1px solid var(--border);
-    color: var(--text); font-family: var(--font-mono); font-size: 12px;
-    outline: none; resize: vertical; transition: border-color 0.2s;
-  }
-  .cmd-textarea:focus, .cmd-input:focus { border-color: var(--accent); }
-  .cmd-textarea { min-height: 80px; }
-  .cmd-input { resize: none; }
-
-  /* Config edit */
-  .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .config-item label {
-    display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
-    color: var(--muted); margin-bottom: 4px;
-  }
-  .config-item input {
-    width: 100%; padding: 8px 10px; border-radius: 6px;
-    background: var(--bg); border: 1px solid var(--border);
-    color: var(--text); font-family: var(--font-mono); font-size: 12px; outline: none;
-    transition: border-color 0.2s;
-  }
-  .config-item input:focus { border-color: var(--accent); }
-
-  /* Log panel */
-  .log-panel {
-    background: var(--surface); border-top: 1px solid var(--border);
-    height: 160px; min-height: 160px; overflow-y: auto; padding: 10px 16px;
-    flex-shrink: 0;
-  }
-  .log-panel::-webkit-scrollbar { width: 4px; }
-  .log-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-  .log-header {
-    font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
-    color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;
-  }
-  .log-clear { cursor: pointer; color: var(--muted); transition: color 0.2s; font-size: 10px; }
-  .log-clear:hover { color: var(--red); }
-  .log-entry {
-    font-family: var(--font-mono); font-size: 11px; line-height: 1.7; display: flex; gap: 8px;
-  }
-  .log-entry .ts { color: var(--muted); flex-shrink: 0; }
-  .log-entry.ok .msg { color: var(--green); }
-  .log-entry.err .msg { color: var(--red); }
-  .log-entry.info .msg { color: var(--accent); }
-  .log-entry.warn .msg { color: var(--yellow); }
-
-  /* Toast */
-  .toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
-  .toast {
-    padding: 10px 16px; border-radius: 8px; font-size: 12px; font-family: var(--font-mono);
-    font-weight: 600; animation: toastIn 0.3s ease; box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-    display: flex; align-items: center; gap: 8px;
-  }
-  .toast.ok { background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.4); color: var(--green); }
-  .toast.err { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.4); color: var(--red); }
-  @keyframes toastIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
-
-  /* Worker config modal */
-  #workerModal {
-    position: fixed; inset: 0; z-index: 2000; display: none;
-    align-items: center; justify-content: center;
-    background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
-  }
-  #workerModal.open { display: flex; }
-  .modal-box {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
-    padding: 28px 24px; width: 400px;
-    box-shadow: 0 0 60px rgba(140,100,255,0.1);
-  }
-  .modal-box h3 { font-family: var(--font-mono); font-size: 14px; font-weight: 800; margin-bottom: 16px; color: var(--accent); letter-spacing: 1px; }
-  .modal-box label { display: block; font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; margin-top: 14px; }
-  .modal-box input {
-    width: 100%; padding: 10px 14px; border-radius: 8px;
-    background: var(--bg); border: 1px solid var(--border);
-    color: var(--text); font-family: var(--font-mono); font-size: 13px; outline: none;
-    transition: border-color 0.2s;
-  }
-  .modal-box input:focus { border-color: var(--accent); }
-  .modal-hint { font-size: 10px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
-  .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
-
-  /* Answers manager */
-  .answers-target-input { display: flex; gap: 8px; margin-bottom: 8px; }
-  .answers-target-input input { flex: 1; }
-
-  /* Snapshot */
-  #screenshotDot.live  { background: var(--green)  !important; box-shadow: 0 0 6px var(--green); }
-  #screenshotDot.stale { background: var(--yellow) !important; }
-  .snap-chip {
-    padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 700;
-    font-family: var(--font-mono);
-  }
-  .snap-chip.running { background:rgba(34,197,94,0.12);  border:1px solid rgba(34,197,94,0.4);  color:var(--green);  }
-  .snap-chip.stopped { background:rgba(100,116,139,0.12);border:1px solid rgba(100,116,139,0.3);color:var(--muted);  }
-  .snap-chip.god     { background:rgba(251,191,36,0.12); border:1px solid rgba(251,191,36,0.4); color:var(--yellow); }
-  .snap-chip.info    { background:rgba(140,100,255,0.12);border:1px solid rgba(140,100,255,0.3);color:var(--accent); }
-  .snap-q-row { display:flex;align-items:center;gap:8px;padding:5px 10px;border-bottom:1px solid rgba(255,255,255,0.04);font-size:11px; }
-  .snap-q-row:last-child { border-bottom:none; }
-  .snap-q-num  { font-family:var(--font-mono);font-size:10px;color:var(--muted);flex-shrink:0;width:24px;text-align:right; }
-  .snap-q-icon { flex-shrink:0;font-size:12px; }
-  .snap-q-title{ flex:1;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
-  .snap-q-ans  { font-family:var(--font-mono);font-size:10px;color:var(--accent);flex-shrink:0;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
-  #snapQuestions::-webkit-scrollbar { width:3px; }
-  #snapQuestions::-webkit-scrollbar-thumb { background:var(--border);border-radius:2px; }
-
-  /* No-client placeholder */
-  .no-clients { text-align: center; padding: 40px 16px; color: var(--muted); font-size: 12px; line-height: 2; }
-  .no-clients .icon { font-size: 32px; display: block; margin-bottom: 8px; opacity: 0.3; }
-</style>
-</head>
-<body>
-
-<!-- LOGIN -->
-<div id="loginScreen">
-  <div class="login-box">
-    <div class="login-logo">
-      <span class="icon">🎮</span>
-      <h1>KT SUPPORT</h1>
-      <p>ADMIN PANEL v2.0</p>
-    </div>
-    <div class="login-field">
-      <label>Mật khẩu Admin</label>
-      <input type="password" id="passwordInput" placeholder="Nhập mật khẩu..." autocomplete="off">
-    </div>
-    <button class="login-btn" id="loginBtn">ĐĂNG NHẬP</button>
-    <div class="login-err" id="loginErr">Sai mật khẩu hoặc không kết nối được!</div>
-  </div>
+:root{--pbg:rgba(24,18,10,.74);--pfg:#f6ecd9;--acc:#e0922f}
+html,body{height:100%;margin:0;overflow:hidden;background:#5f7791;font-family:system-ui,-apple-system,sans-serif}
+canvas{display:block}
+.panel{position:absolute;background:var(--pbg);color:var(--pfg);border-radius:12px;padding:10px 14px;font-size:13px;backdrop-filter:blur(6px)}
+#hud{left:10px;top:calc(env(safe-area-inset-top,0px) + 10px);line-height:1.65;min-width:175px}
+#hud b{color:var(--acc)}#hud small{opacity:.7}
+#bar{left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 12px);display:flex;gap:14px;align-items:center;flex-wrap:wrap;justify-content:center;max-width:94vw}
+button{font:inherit;font-weight:600;border:0;border-radius:9px;padding:9px 18px;cursor:pointer;color:#fff;background:var(--acc)}
+button.s{background:#5b4a35}button:disabled{opacity:.45;cursor:default}
+label{display:flex;flex-direction:column;gap:2px;font-size:12px}
+input[type=range]{width:110px}select{font:inherit}
+</style></head><body>
+<div id="hud" class="panel"><div style="font-weight:700;font-size:15px">Trebuchet – máy bắn đá</div>
+Trạng thái: <b id="st">Sẵn sàng</b><br>Tầm bắn: <b id="dist">–</b><br>Độ cao tối đa: <b id="hmax">–</b><br>Tốc độ ném: <b id="v0">–</b><br>
+<small>Kéo chuột để xoay · cuộn để zoom</small></div>
+<div id="bar" class="panel">
+<button id="fire">🔥 Bắn!</button><button id="reset" class="s">↺ Nạp lại</button>
+<label>Đối trọng: <span id="cwv">120</span> kg<input id="cw" type="range" min="60" max="220" step="10" value="120"></label>
+<label>Dây ném: <span id="lv">3.2</span> m<input id="ln" type="range" min="2.4" max="4.2" step="0.1" value="3.2"></label>
+<label>Tốc độ<select id="sp"><option value="1">1×</option><option value=".5">0.5×</option><option value=".25">0.25×</option></select></label>
+<label><span><input id="fl" type="checkbox" checked> Camera theo đá</span></label>
 </div>
-
-<!-- APP -->
-<div id="app">
-  <div class="topbar">
-    <div class="topbar-left">
-      <span style="font-size:20px;">🎮</span>
-      <div class="topbar-title">KT SUPPORT ADMIN</div>
-      <div class="topbar-dot"></div>
-    </div>
-    <div class="topbar-right">
-      <div class="topbar-worker" id="topbarWorkerUrl" title="Nhấn để đổi Worker URL"></div>
-      <button class="topbar-logout" id="logoutBtn">LOGOUT</button>
-    </div>
-  </div>
-
-  <div class="main-layout">
-    <!-- SIDEBAR -->
-    <div class="sidebar">
-      <div class="sidebar-header">
-        <h2>Máy đích</h2>
-        <div class="sidebar-stats">
-          <div class="stat-chip green"><div class="val" id="onlineCount">0</div><div class="lbl">Online</div></div>
-          <div class="stat-chip red"><div class="val" id="offlineCount">0</div><div class="lbl">Offline</div></div>
-          <div class="stat-chip"><div class="val" id="totalCount">0</div><div class="lbl">Tổng</div></div>
-        </div>
-        <button class="refresh-btn" id="refreshBtn">
-          <span class="refresh-icon">↻</span>
-          <span>Làm mới danh sách</span>
-        </button>
-      </div>
-      <div class="client-list" id="clientList">
-        <div class="no-clients"><span class="icon">📡</span>Chưa có máy nào kết nối<br>Hãy cài userscript trên máy đích</div>
-      </div>
-      <button class="broadcast-btn" id="broadcastBtn">📡 BROADCAST TẤT CẢ</button>
-    </div>
-
-    <!-- CONTENT -->
-    <div class="content">
-      <div class="empty-state" id="emptyState">
-        <div class="icon">🎯</div>
-        <p>Chọn một máy đích từ danh sách bên trái</p>
-      </div>
-
-      <div class="cmd-panel" id="cmdPanel">
-        <!-- Target info -->
-        <div class="panel-target" id="panelTarget">
-          <div class="panel-target-left">
-            <span style="font-size:20px;">💻</span>
-            <div>
-              <div class="panel-target-name" id="targetName">—</div>
-              <div class="panel-target-id" id="targetId">—</div>
-            </div>
-          </div>
-          <div class="panel-target-status on" id="targetStatus">ONLINE</div>
-        </div>
-
-        <div class="cmd-grid">
-          <!-- GOD MODE -->
-          <div class="cmd-card">
-            <div class="cmd-card-header">
-              <span class="cmd-card-icon">⚡</span>
-              <span class="cmd-card-title">God Mode</span>
-            </div>
-            <div class="toggle-row">
-              <span class="toggle-label">AUTO 1S</span>
-              <div class="toggle-switch" id="godModeSwitch">
-                <div class="toggle-thumb"></div>
-              </div>
-            </div>
-            <div class="toggle-desc">Bật/tắt chế độ điền đáp án tức thì</div>
-            <div class="cmd-btn-row">
-              <button class="cmd-btn cmd-btn-primary" onclick="sendGodMode()">GỬI LỆNH</button>
-            </div>
-          </div>
-
-          <!-- AUTO START/STOP -->
-          <div class="cmd-card">
-            <div class="cmd-card-header">
-              <span class="cmd-card-icon">🤖</span>
-              <span class="cmd-card-title">Điều khiển</span>
-            </div>
-            <div class="cmd-btn-row" style="flex-direction:column; gap:8px; margin-top:0;">
-              <button class="cmd-btn cmd-btn-green cmd-btn-full" onclick="sendCmd('start')">▶ START AUTO</button>
-              <button class="cmd-btn cmd-btn-red cmd-btn-full" onclick="sendCmd('stop')">■ STOP AUTO</button>
-            </div>
-          </div>
-
-          <!-- 🚀 NHẬP ĐÁP ÁN & START TRỰC TIẾP -->
-          <div class="cmd-card full" style="border-color:rgba(34,197,94,0.35);">
-            <div class="cmd-card-header">
-              <span class="cmd-card-icon">🚀</span>
-              <span class="cmd-card-title" style="color:var(--green);">Nhập đáp án → Start ngay</span>
-            </div>
-            <textarea class="cmd-textarea" id="directAnswersInput" placeholder='Dán đáp án vào đây&#10;["A.","B.","C.","D."]&#10;hoặc mỗi dòng một đáp án' style="min-height:80px;border-color:rgba(34,197,94,0.3);"></textarea>
-            <div class="config-grid" style="margin-top:8px;">
-              <div class="config-item">
-                <label>Tốc độ (ms)</label>
-                <input type="number" id="directSpeed" value="400" min="100" max="2000" step="100">
-              </div>
-              <div class="config-item">
-                <label>Điểm mục tiêu</label>
-                <input type="number" id="directScore" value="8" min="0" max="10">
-              </div>
-            </div>
-            <div class="cmd-btn-row" style="margin-top:10px;align-items:center;flex-wrap:wrap;gap:8px;">
-              <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:160px;">
-                <span style="font-size:11px;color:var(--muted);white-space:nowrap;">God Mode:</span>
-                <div class="toggle-switch" id="directGodMode" style="flex-shrink:0;"><div class="toggle-thumb"></div></div>
-              </div>
-              <button class="cmd-btn cmd-btn-green" style="flex:2;min-width:160px;" onclick="sendStartWithAnswers()">🚀 GỬI ĐÁP ÁN &amp; START</button>
-            </div>
-            <div style="margin-top:8px;padding:6px 8px;background:rgba(34,197,94,0.05);border-radius:6px;border:1px solid rgba(34,197,94,0.2);font-size:10px;color:var(--muted);line-height:1.6;">
-              Gửi đáp án thẳng tới máy đích và chạy AUTO ngay — không cần lưu cloud.
-            </div>
-          </div>
-
-          <!-- TIN NHẮN -->
-          <div class="cmd-card full">
-            <div class="cmd-card-header">
-              <span class="cmd-card-icon">💬</span>
-              <span class="cmd-card-title">Tin nhắn hiển thị</span>
-            </div>
-            <textarea class="cmd-textarea" id="msgInput" placeholder="Nhập tin nhắn sẽ hiện lên màn hình máy đích..."></textarea>
-            <div class="cmd-btn-row">
-              <button class="cmd-btn cmd-btn-primary" onclick="sendMessage()">📤 GỬI TIN NHẮN</button>
-              <button class="cmd-btn cmd-btn-outline" onclick="sendCmd('clearMsg')">✕ XÓA TIN NHẮN</button>
-            </div>
-          </div>
-
-          <!-- ANSWERS CLOUD -->
-          <div class="cmd-card full">
-            <div class="cmd-card-header">
-              <span class="cmd-card-icon">☁️</span>
-              <span class="cmd-card-title">Gửi đáp án lên Cloud</span>
-            </div>
-            <div class="answers-target-input">
-              <input type="text" class="cmd-input" id="answerPracticeId" placeholder="Practice ID (để trống = auto lấy từ máy đích)" style="resize:none;">
-              <input type="number" class="cmd-input" id="answerDays" value="30" style="width:90px;resize:none;" placeholder="Ngày">
-            </div>
-            <textarea class="cmd-textarea" id="answersInput" placeholder='Dán đáp án vào đây&#10;["A.","B.","C.","D."]&#10;hoặc mỗi dòng một đáp án' style="min-height:70px;"></textarea>
-            <div class="cmd-btn-row">
-              <button class="cmd-btn cmd-btn-primary" onclick="uploadAnswers()">☁️ LƯU LÊN CLOUD</button>
-              <button class="cmd-btn cmd-btn-outline" onclick="sendCmd('loadCloud')">📡 BẢO MÁY ĐÍCH TẢI</button>
-            </div>
-          </div>
-
-          <!-- CẤU HÌNH -->
-          <div class="cmd-card full">
-            <div class="cmd-card-header">
-              <span class="cmd-card-icon">⚙️</span>
-              <span class="cmd-card-title">Cấu hình từ xa</span>
-            </div>
-            <div class="config-grid">
-              <div class="config-item">
-                <label>Tốc độ (ms)</label>
-                <input type="number" id="cfgSpeed" value="400" min="100" max="2000" step="100">
-              </div>
-              <div class="config-item">
-                <label>Điểm mục tiêu</label>
-                <input type="number" id="cfgScore" value="8" min="0" max="10">
-              </div>
-            </div>
-            <div class="cmd-btn-row">
-              <button class="cmd-btn cmd-btn-primary" onclick="sendConfig()">⚙️ ÁP DỤNG CẤU HÌNH</button>
-            </div>
-          </div>
-
-          <!-- 📊 DOM SNAPSHOT -->
-          <div class="cmd-card full" style="border-color:rgba(251,191,36,0.3);">
-            <div class="cmd-card-header" style="justify-content:space-between;">
-              <div style="display:flex;align-items:center;gap:8px;">
-                <span class="cmd-card-icon">📊</span>
-                <span class="cmd-card-title" style="color:var(--yellow);">Trạng thái máy đích</span>
-              </div>
-              <div style="display:flex;align-items:center;gap:8px;">
-                <span id="screenshotAge" style="font-size:10px;color:var(--muted);font-family:var(--font-mono);">—</span>
-                <div id="screenshotDot" style="width:7px;height:7px;border-radius:50%;background:var(--muted);flex-shrink:0;"></div>
-              </div>
-            </div>
-
-            <div id="snapEmpty" style="font-size:11px;color:var(--muted);text-align:center;padding:20px 0;">Nhấn nút bên dưới để lấy trạng thái từ máy đích</div>
-
-            <div id="snapContent" style="display:none;">
-              <!-- Progress bar -->
-              <div style="margin-bottom:10px;">
-                <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
-                  <span id="snapProgressLabel" style="font-size:11px;color:var(--text);font-weight:600;"></span>
-                  <span id="snapProgressPct" style="font-size:12px;color:var(--accent);font-weight:800;font-family:var(--font-mono);"></span>
-                </div>
-                <div style="height:7px;background:var(--bg);border-radius:4px;overflow:hidden;border:1px solid var(--border);">
-                  <div id="snapProgressBar" style="height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:4px;transition:width 0.4s;width:0%;"></div>
-                </div>
-              </div>
-              <!-- Status chips -->
-              <div id="snapChips" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;"></div>
-              <!-- Question list -->
-              <div id="snapQuestions" style="max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;background:var(--bg);"></div>
-            </div>
-
-            <div class="cmd-btn-row" style="margin-top:10px;">
-              <button class="cmd-btn cmd-btn-primary" style="flex:1;" onclick="requestSnapshot(this)">📊 LẤY SNAPSHOT</button>
-            </div>
-          </div>
-
-          <!-- 📋 COPY Q&A -->
-          <div class="cmd-card full" style="border-color:rgba(34,197,94,0.25);">
-            <div class="cmd-card-header">
-              <span class="cmd-card-icon">📋</span>
-              <span class="cmd-card-title" style="color:var(--green);">Copy Q&A từ máy đích</span>
-            </div>
-            <div id="qaPreview" style="display:none;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;font-family:var(--font-mono);font-size:10px;color:var(--text);max-height:140px;overflow-y:auto;white-space:pre-wrap;line-height:1.6;margin-bottom:8px;"></div>
-            <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">Yêu cầu máy đích quét câu hỏi và gửi lên — sau đó copy về máy admin.</div>
-            <div class="cmd-btn-row">
-              <button class="cmd-btn cmd-btn-primary" onclick="requestCopyQA()">📡 YÊU CẦU MÁY ĐÍCh QUÉT</button>
-              <button class="cmd-btn cmd-btn-outline" id="copyQABtn" onclick="copyQAToClipboard()" style="display:none;">📋 COPY</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- LOG -->
-      <div class="log-panel" id="logPanel">
-        <div class="log-header">
-          <span>📋 ACTIVITY LOG</span>
-          <span class="log-clear" onclick="clearLog()">XÓA LOG</span>
-        </div>
-        <div id="logEntries"></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- WORKER CONFIG MODAL -->
-<div id="workerModal">
-  <div class="modal-box">
-    <h3>⚙️ CẤU HÌNH WORKER</h3>
-    <label>Worker URL</label>
-    <input type="text" id="modalWorkerUrl" placeholder="https://your-worker.workers.dev">
-    <div class="modal-hint">URL của Cloudflare Worker bạn đã deploy.</div>
-    <label>Mật khẩu Admin</label>
-    <input type="password" id="modalAdminPass" placeholder="Nhập mật khẩu mới (để trống = giữ nguyên)">
-    <div class="modal-btns">
-      <button class="cmd-btn cmd-btn-primary" onclick="saveWorkerConfig()">LƯU</button>
-      <button class="cmd-btn cmd-btn-outline" onclick="closeWorkerModal()">HỦY</button>
-    </div>
-  </div>
-</div>
-
-<!-- BROADCAST MODAL -->
-<div id="broadcastModal" style="position:fixed;inset:0;z-index:2000;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);">
-  <div class="modal-box">
-    <h3>📡 BROADCAST TẤT CẢ MÁY ONLINE</h3>
-    <label>Loại lệnh</label>
-    <select id="broadcastType" style="width:100%;padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font-mono);font-size:13px;outline:none;margin-bottom:8px;">
-      <option value="message">💬 Tin nhắn</option>
-      <option value="godmode_on">⚡ Bật God Mode</option>
-      <option value="godmode_off">⚡ Tắt God Mode</option>
-      <option value="start">▶ Start Auto</option>
-      <option value="stop">■ Stop Auto</option>
-      <option value="clearMsg">✕ Xóa tin nhắn</option>
-      <option value="loadCloud">☁️ Tải đáp án Cloud</option>
-    </select>
-    <label>Nội dung (nếu có)</label>
-    <textarea class="cmd-textarea" id="broadcastPayload" style="min-height:60px;" placeholder="Nhập tin nhắn..."></textarea>
-    <div class="modal-btns">
-      <button class="cmd-btn cmd-btn-primary" onclick="doBroadcast()">📡 BROADCAST</button>
-      <button class="cmd-btn cmd-btn-outline" onclick="document.getElementById('broadcastModal').style.display='none'">HỦY</button>
-    </div>
-  </div>
-</div>
-
-<div class="toast-container" id="toastContainer"></div>
-
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script>
-const WORKER_URL = 'https://remote.shopduyhanh.workers.dev';
-let ADMIN_TOKEN = localStorage.getItem('kt_admin_token') || '';
-let selectedClient = null;
-let clients = [];
-let refreshInterval = null;
-
-// ─── AUTO LOGIN nếu đã có token lưu ───
-window.onload = () => {
-  if (ADMIN_TOKEN) {
-    fetch(`${WORKER_URL}/api/clients`, { headers: { 'X-Admin-Token': ADMIN_TOKEN } })
-      .then(r => r.json())
-      .then(d => {
-        if (d.clients !== undefined) {
-          document.getElementById('loginScreen').style.display = 'none';
-          document.getElementById('app').style.display = 'block';
-          document.getElementById('topbarWorkerUrl').textContent = WORKER_URL.replace('https://','');
-          startRefresh();
-          log('info', `Tự động đăng nhập thành công`);
-        } else {
-          ADMIN_TOKEN = '';
-          localStorage.removeItem('kt_admin_token');
-        }
-      })
-      .catch(() => { ADMIN_TOKEN = ''; });
-  }
-};
-
-// ─── LOGIN ───
-document.getElementById('loginBtn').onclick = async () => {
-  const pass = document.getElementById('passwordInput').value.trim();
-  if (!pass) { showLoginErr('Vui lòng nhập mật khẩu!'); return; }
-
-  const btn = document.getElementById('loginBtn');
-  btn.textContent = 'ĐANG KẾT NỐI...'; btn.disabled = true;
-
-  try {
-    const res = await fetch(`${WORKER_URL}/api/admin/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: pass })
-    });
-    const data = await res.json();
-    if (data.success) {
-      ADMIN_TOKEN = data.token;
-      localStorage.setItem('kt_admin_token', ADMIN_TOKEN);
-      document.getElementById('loginScreen').style.display = 'none';
-      document.getElementById('app').style.display = 'block';
-      document.getElementById('topbarWorkerUrl').textContent = WORKER_URL.replace('https://', '');
-      startRefresh();
-      log('info', `Đăng nhập thành công → ${WORKER_URL}`);
-    } else {
-      showLoginErr(data.error || 'Sai mật khẩu!');
-    }
-  } catch (e) {
-    showLoginErr('Không kết nối được Worker!');
-  } finally {
-    btn.textContent = 'ĐĂNG NHẬP'; btn.disabled = false;
-  }
-};
-document.getElementById('passwordInput').onkeydown = e => { if (e.key === 'Enter') document.getElementById('loginBtn').click(); };
-function showLoginErr(msg) {
-  const el = document.getElementById('loginErr');
-  el.textContent = msg; el.style.display = 'block';
-  setTimeout(() => el.style.display = 'none', 3000);
-}
-
-document.getElementById('logoutBtn').onclick = () => {
-  ADMIN_TOKEN = ''; selectedClient = null; clients = [];
-  localStorage.removeItem('kt_admin_token');
-  if (refreshInterval) clearInterval(refreshInterval);
-  stopScreenshotPolling();
-  document.getElementById('app').style.display = 'none';
-  document.getElementById('loginScreen').style.display = 'flex';
-};
-
-// ─── CLIENTS ───
-async function fetchClients() {
-  try {
-    const res = await fetch(`${WORKER_URL}/api/clients`, {
-      headers: { 'X-Admin-Token': ADMIN_TOKEN }
-    });
-    const data = await res.json();
-    clients = data.clients || [];
-    renderClients();
-  } catch (e) {
-    log('err', 'Lỗi tải danh sách máy: ' + e.message);
-  }
-}
-
-function renderClients() {
-  const list = document.getElementById('clientList');
-  const online = clients.filter(c => c.online).length;
-  document.getElementById('onlineCount').textContent = online;
-  document.getElementById('offlineCount').textContent = clients.length - online;
-  document.getElementById('totalCount').textContent = clients.length;
-
-  if (!clients.length) {
-    list.innerHTML = '<div class="no-clients"><span class="icon">📡</span>Chưa có máy nào kết nối<br>Hãy cài userscript trên máy đích</div>';
-    return;
-  }
-
-  list.innerHTML = clients.map(c => `
-    <div class="client-card ${selectedClient?.id === c.id ? 'selected' : ''}"
-         onclick="selectClient('${c.id}')">
-      <div class="client-name">
-        <span class="online-badge ${c.online ? 'on' : 'off'}"></span>
-        ${escapeHtml(c.label || c.id)}
-      </div>
-      <div class="client-meta">
-        <span>ID: ${escapeHtml(c.id.slice(0,12))}${c.id.length > 12 ? '…' : ''}</span>
-        ${c.practiceId ? `<span>Practice: ${escapeHtml(c.practiceId.slice(0,10))}…</span>` : ''}
-        <span>Seen: ${timeAgo(c.lastSeen)}</span>
-      </div>
-    </div>
-  `).join('');
-
-  // Update selected client data
-  if (selectedClient) {
-    const updated = clients.find(c => c.id === selectedClient.id);
-    if (updated) { selectedClient = updated; updateTargetPanel(); }
-  }
-}
-
-function selectClient(id) {
-  selectedClient = clients.find(c => c.id === id);
-  if (!selectedClient) return;
-  document.getElementById('emptyState').style.display = 'none';
-  document.getElementById('cmdPanel').style.display = 'flex';
-  updateTargetPanel();
-  renderClients();
-  // Auto-fill practiceId
-  if (selectedClient.practiceId) {
-    document.getElementById('answerPracticeId').placeholder = `Auto: ${selectedClient.practiceId}`;
-  }
-  // Reset Q&A panel
-  _latestQAText = '';
-  const preview = document.getElementById('qaPreview');
-  const copyBtn = document.getElementById('copyQABtn');
-  if (preview) { preview.textContent = ''; preview.style.display = 'none'; }
-  if (copyBtn) copyBtn.style.display = 'none';
-  // Reset snapshot panel
-  const snapEmpty   = document.getElementById('snapEmpty');
-  const snapContent = document.getElementById('snapContent');
-  if (snapEmpty)   { snapEmpty.style.display = 'block'; }
-  if (snapContent) { snapContent.style.display = 'none'; }
-  const dotEl = document.getElementById('screenshotDot');
-  const ageEl = document.getElementById('screenshotAge');
-  if (dotEl) { dotEl.className = ''; dotEl.style.cssText = 'width:7px;height:7px;border-radius:50%;background:var(--muted);flex-shrink:0;'; }
-  if (ageEl) ageEl.textContent = '—';
-  // Bắt đầu poll screenshot của máy này
-  startScreenshotPolling(selectedClient.id);
-  log('info', `Chọn máy: ${selectedClient.label || selectedClient.id}`);
-}
-
-function updateTargetPanel() {
-  if (!selectedClient) return;
-  document.getElementById('targetName').textContent = selectedClient.label || selectedClient.id;
-  document.getElementById('targetId').textContent = selectedClient.id;
-  const statusEl = document.getElementById('targetStatus');
-  statusEl.textContent = selectedClient.online ? 'ONLINE' : 'OFFLINE';
-  statusEl.className = 'panel-target-status ' + (selectedClient.online ? 'on' : 'off');
-}
-
-function startRefresh() {
-  fetchClients();
-  if (refreshInterval) clearInterval(refreshInterval);
-  refreshInterval = setInterval(fetchClients, 8000);
-}
-
-document.getElementById('refreshBtn').onclick = () => {
-  const btn = document.getElementById('refreshBtn');
-  btn.classList.add('spinning');
-  fetchClients().finally(() => setTimeout(() => btn.classList.remove('spinning'), 600));
-};
-
-// ─── COMMANDS ───
-async function apiPost(endpoint, body) {
-  const res = await fetch(`${WORKER_URL}${endpoint}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Admin-Token': ADMIN_TOKEN },
-    body: JSON.stringify(body)
-  });
-  return res.json();
-}
-
-async function sendCmd(type, payload = null) {
-  if (!selectedClient) { toast('Chưa chọn máy đích!', 'err'); return; }
-  try {
-    const data = await apiPost(`/api/command/${encodeURIComponent(selectedClient.id)}`, { type, payload });
-    if (data.ok) {
-      toast(`✓ Đã gửi [${type}] → ${selectedClient.label || selectedClient.id}`, 'ok');
-      log('ok', `Lệnh [${type}] → ${selectedClient.label || selectedClient.id}${payload ? ': ' + JSON.stringify(payload) : ''}`);
-    }
-  } catch (e) {
-    toast('Lỗi gửi lệnh!', 'err');
-    log('err', `Lỗi gửi [${type}]: ${e.message}`);
-  }
-}
-
-function sendGodMode() {
-  const on = document.getElementById('godModeSwitch').classList.contains('on');
-  sendCmd('godmode', { enabled: on });
-}
-
-function sendMessage() {
-  const msg = document.getElementById('msgInput').value.trim();
-  if (!msg) { toast('Nhập tin nhắn trước!', 'err'); return; }
-  sendCmd('message', { text: msg });
-}
-
-function sendConfig() {
-  const speed = parseInt(document.getElementById('cfgSpeed').value) || 400;
-  const targetScore = parseInt(document.getElementById('cfgScore').value) || 8;
-  sendCmd('config', { speed, targetScore });
-}
-
-// ─── START WITH ANSWERS (gửi đáp án + start thẳng lên máy đích) ───
-function parseAnswersRaw(raw) {
-  try {
-    const p = JSON.parse(raw);
-    if (Array.isArray(p)) return p;
-  } catch {}
-  return raw.split('\n').map(l => l.trim()).filter(Boolean);
-}
-
-async function sendStartWithAnswers() {
-  if (!selectedClient) { toast('Chưa chọn máy đích!', 'err'); return; }
-  const raw = document.getElementById('directAnswersInput').value.trim();
-  if (!raw) { toast('Nhập đáp án trước!', 'err'); return; }
-  const answers = parseAnswersRaw(raw);
-  if (!answers.length) { toast('Đáp án rỗng!', 'err'); return; }
-
-  const speed = parseInt(document.getElementById('directSpeed').value) || 400;
-  const targetScore = parseInt(document.getElementById('directScore').value) || 8;
-  const godMode = document.getElementById('directGodMode').classList.contains('on');
-
-  try {
-    const data = await apiPost(`/api/command/${encodeURIComponent(selectedClient.id)}`, {
-      type: 'startWithAnswers',
-      payload: { answers, speed, targetScore, godMode }
-    });
-    if (data.ok) {
-      toast(`🚀 Đã gửi ${answers.length} đáp án + START → ${selectedClient.label || selectedClient.id}`, 'ok');
-      log('ok', `startWithAnswers → ${selectedClient.label || selectedClient.id}: ${answers.length} đáp án, speed=${speed}, score=${targetScore}, god=${godMode}`);
-    }
-  } catch (e) {
-    toast('Lỗi gửi lệnh!', 'err');
-    log('err', `Lỗi startWithAnswers: ${e.message}`);
-  }
-}
-
-// directGodMode toggle
-document.getElementById('directGodMode').onclick = function() {
-  this.classList.toggle('on');
-};
-
-async function uploadAnswers() {
-  const raw = document.getElementById('answersInput').value.trim();
-  if (!raw) { toast('Nhập đáp án trước!', 'err'); return; }
-
-  let answers;
-  try {
-    answers = JSON.parse(raw);
-    if (!Array.isArray(answers)) throw new Error();
-  } catch {
-    answers = raw.split('\n').map(l => l.trim()).filter(Boolean);
-  }
-
-  let practiceId = document.getElementById('answerPracticeId').value.trim();
-  if (!practiceId && selectedClient?.practiceId) practiceId = selectedClient.practiceId;
-  if (!practiceId) { toast('Cần nhập Practice ID!', 'err'); return; }
-
-  const days = parseInt(document.getElementById('answerDays').value) || 30;
-
-  try {
-    const data = await apiPost(`/api/answers/${encodeURIComponent(practiceId)}`, { answers, daysRemaining: days });
-    if (data.ok) {
-      toast(`☁️ Đã lưu ${data.count} đáp án cho ${practiceId}`, 'ok');
-      log('ok', `Lưu ${data.count} đáp án → ${practiceId} (${days} ngày)`);
-    }
-  } catch (e) {
-    toast('Lỗi lưu đáp án!', 'err');
-    log('err', `Lỗi lưu đáp án: ${e.message}`);
-  }
-}
-
-// God mode toggle
-document.getElementById('godModeSwitch').onclick = function() {
-  this.classList.toggle('on');
-};
-
-// ─── BROADCAST ───
-document.getElementById('broadcastBtn').onclick = () => {
-  document.getElementById('broadcastModal').style.display = 'flex';
-};
-async function doBroadcast() {
-  const type = document.getElementById('broadcastType').value;
-  const payload = document.getElementById('broadcastPayload').value.trim();
-
-  let cmdType = type, cmdPayload = null;
-  if (type === 'message') { cmdPayload = { text: payload }; }
-  else if (type === 'godmode_on') { cmdType = 'godmode'; cmdPayload = { enabled: true }; }
-  else if (type === 'godmode_off') { cmdType = 'godmode'; cmdPayload = { enabled: false }; }
-
-  try {
-    const data = await apiPost('/api/broadcast', { type: cmdType, payload: cmdPayload });
-    toast(`📡 Broadcast [${type}] → ${data.sent} máy`, 'ok');
-    log('ok', `Broadcast [${type}] → ${data.sent} máy online`);
-  } catch (e) {
-    toast('Lỗi broadcast!', 'err');
-    log('err', `Lỗi broadcast: ${e.message}`);
-  }
-  document.getElementById('broadcastModal').style.display = 'none';
-}
-
-// ─── TOPBAR WORKER LABEL (readonly, URL hardcoded) ───
-document.getElementById('topbarWorkerUrl').style.cursor = 'default';
-document.getElementById('topbarWorkerUrl').title = WORKER_URL;
-
-// ─── DOM SNAPSHOT (on-demand) ───
-let screenshotInterval = null; // unused now but keep for stopScreenshotPolling compat
-let _latestQAText = '';
-
-function startScreenshotPolling() { /* no-op — snapshot is on-demand */ }
-function stopScreenshotPolling()  { /* no-op */ }
-
-async function requestSnapshot(btn) {
-  if (!selectedClient) { toast('Chưa chọn máy đích!', 'err'); return; }
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Đang lấy...'; }
-
-  const clientId = selectedClient.id;
-  const sentAt = Date.now();
-
-  try {
-    await apiPost(`/api/command/${encodeURIComponent(clientId)}`, { type: 'getSnapshot', payload: null });
-  } catch(e) {
-    toast('Lỗi gửi lệnh!', 'err');
-    if (btn) { btn.disabled = false; btn.textContent = '📊 LẤY SNAPSHOT'; }
-    return;
-  }
-
-  // Poll cho đến khi nhận được snapshot mới hơn thời điểm gửi lệnh
-  let attempts = 0;
-  const maxAttempts = 10; // tối đa 10s
-
-  const poll = async () => {
-    attempts++;
-    try {
-      const res = await fetch(`${WORKER_URL}/api/screenshot/${encodeURIComponent(clientId)}`, {
-        headers: { 'X-Admin-Token': ADMIN_TOKEN }
-      });
-      const data = await res.json();
-
-      if (data.exists && data.data && typeof data.data === 'object' && data.takenAt > sentAt) {
-        // Có snapshot mới
-        renderSnapshot(data.data, data.takenAt);
-        if (btn) { btn.disabled = false; btn.textContent = '📊 LẤY SNAPSHOT'; }
-        log('ok', `Snapshot nhận được sau ${attempts}s — ${data.data.userName || clientId}`);
-        return;
-      }
-    } catch(e) {}
-
-    if (attempts < maxAttempts) {
-      setTimeout(poll, 1000);
-    } else {
-      toast('⚠️ Máy đích không phản hồi', 'err');
-      if (btn) { btn.disabled = false; btn.textContent = '📊 LẤY SNAPSHOT'; }
-    }
-  };
-
-  // Bắt đầu poll sau 1s
-  setTimeout(poll, 1000);
-}
-
-function renderSnapshot(snap, takenAt) {
-  const dot     = document.getElementById('screenshotDot');
-  const age     = document.getElementById('screenshotAge');
-  const empty   = document.getElementById('snapEmpty');
-  const content = document.getElementById('snapContent');
-  if (!dot || !empty || !content) return;
-
-  const ageSecs = Math.round((Date.now() - takenAt) / 1000);
-  age.textContent = ageSecs < 60 ? `${ageSecs}s trước` : `${Math.round(ageSecs/60)}m trước`;
-  dot.className = ageSecs < 30 ? 'live' : 'stale';
-
-  empty.style.display = 'none';
-  content.style.display = 'block';
-
-  // Progress
-  const total    = snap.totalQuestions || 0;
-  const answered = snap.answeredQuestions || 0;
-  const pct      = total > 0 ? Math.round(answered / total * 100) : 0;
-  document.getElementById('snapProgressLabel').textContent = `${answered}/${total} câu đã làm`;
-  document.getElementById('snapProgressPct').textContent   = `${pct}%`;
-  document.getElementById('snapProgressBar').style.width   = `${pct}%`;
-
-  // Chips
-  const chips = document.getElementById('snapChips');
-  if (chips) chips.innerHTML = [
-    snap.isRunning ? '<span class="snap-chip running">▶ ĐANG CHẠY</span>' : '<span class="snap-chip stopped">■ DỪNG</span>',
-    snap.godMode   ? '<span class="snap-chip god">⚡ GOD MODE</span>'     : '<span class="snap-chip info">🎯 NORMAL</span>',
-    `<span class="snap-chip info">${snap.speed || 400}ms</span>`,
-    `<span class="snap-chip info">Đ: ${snap.targetScore ?? 8}/10</span>`,
-  ].join('');
-
-  // Question list
-  const qList = document.getElementById('snapQuestions');
-  if (qList && snap.questions?.length) {
-    qList.innerHTML = snap.questions.map(q => `
-      <div class="snap-q-row">
-        <span class="snap-q-num">${q.idx}</span>
-        <span class="snap-q-icon">${q.answered ? '✅' : '⬜'}</span>
-        <span class="snap-q-title" title="${escapeHtml(q.title)}">${escapeHtml(q.title)}</span>
-        ${q.selectedAnswer ? `<span class="snap-q-ans" title="${escapeHtml(q.selectedAnswer)}">${escapeHtml(q.selectedAnswer)}</span>` : ''}
-      </div>`).join('');
-  }
-  log('ok', `Snapshot: ${answered}/${total} câu — ${snap.userName || clientId}`);
-}
-
-// ─── COPY Q&A ───
-async function requestCopyQA() {
-  if (!selectedClient) { toast('Chưa chọn máy đích!', 'err'); return; }
-  // Gửi lệnh copyQA tới máy đích
-  try {
-    await apiPost(`/api/command/${encodeURIComponent(selectedClient.id)}`, { type: 'copyQA', payload: null });
-    toast('📡 Đã yêu cầu — đợi máy đích quét...', 'ok');
-    log('info', `Yêu cầu copyQA → ${selectedClient.label || selectedClient.id}`);
-    // Sau 3s thử lấy kết quả
-    setTimeout(() => fetchQAResult(selectedClient.id), 3000);
-    setTimeout(() => fetchQAResult(selectedClient.id), 6000);
-  } catch(e) {
-    toast('Lỗi gửi lệnh!', 'err');
-  }
-}
-
-async function fetchQAResult(clientId) {
-  try {
-    const res = await fetch(`${WORKER_URL}/api/copyqa/${encodeURIComponent(clientId)}`, {
-      headers: { 'X-Admin-Token': ADMIN_TOKEN }
-    });
-    const data = await res.json();
-    if (data.exists && data.text) {
-      _latestQAText = data.text;
-      const preview = document.getElementById('qaPreview');
-      const copyBtn = document.getElementById('copyQABtn');
-      if (preview) { preview.textContent = data.text; preview.style.display = 'block'; }
-      if (copyBtn) copyBtn.style.display = 'inline-flex';
-      log('ok', `Nhận Q&A từ ${clientId} (${data.text.length} ký tự)`);
-    }
-  } catch(e) {}
-}
-
-function copyQAToClipboard() {
-  if (!_latestQAText) return;
-  navigator.clipboard.writeText(_latestQAText)
-    .then(() => toast('📋 Đã copy Q&A!', 'ok'))
-    .catch(() => {
-      const ta = document.createElement('textarea');
-      ta.value = _latestQAText;
-      ta.style.cssText = 'position:fixed;opacity:0;';
-      document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
-      toast('📋 Đã copy Q&A!', 'ok');
-    });
-}
-
-// ─── LOG ───
-function log(type, msg) {
-  const entries = document.getElementById('logEntries');
-  const el = document.createElement('div');
-  el.className = `log-entry ${type}`;
-  const now = new Date();
-  el.innerHTML = `<span class="ts">${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}</span><span class="msg">${escapeHtml(msg)}</span>`;
-  entries.appendChild(el);
-  const panel = document.getElementById('logPanel');
-  panel.scrollTop = panel.scrollHeight;
-  // Keep only last 100 entries
-  while (entries.children.length > 100) entries.removeChild(entries.firstChild);
-}
-function clearLog() { document.getElementById('logEntries').innerHTML = ''; }
-
-// ─── TOAST ───
-function toast(msg, type = 'ok') {
-  const container = document.getElementById('toastContainer');
-  const el = document.createElement('div');
-  el.className = `toast ${type}`;
-  el.textContent = msg;
-  container.appendChild(el);
-  setTimeout(() => el.remove(), 3000);
-}
-
-// ─── UTILS ───
-function escapeHtml(str) {
-  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-function timeAgo(ts) {
-  const diff = Math.floor((Date.now() - ts) / 1000);
-  if (diff < 10) return 'vừa xong';
-  if (diff < 60) return `${diff}s trước`;
-  if (diff < 3600) return `${Math.floor(diff/60)}m trước`;
-  return `${Math.floor(diff/3600)}h trước`;
-}
-</script>
-</body>
-</html>
+const T=THREE,v=(x,y,z)=>new T.Vector3(x,y,z),$=id=>document.getElementById(id);
+const g=9.8,H=5.8,Ll=5.8,Ls=1.8,D=Math.PI/180,BEND=8*D;
+const P={cw:120,L:3.2};
+const scene=new T.Scene();scene.background=new T.Color(0x6f869e);scene.fog=new T.Fog(0x6f869e,70,340);
+const cam=new T.PerspectiveCamera(50,1,.1,700);cam.position.set(-13,7.5,19);
+const ren=new T.WebGLRenderer({antialias:true});ren.shadowMap.enabled=true;ren.shadowMap.type=T.PCFSoftShadowMap;
+ren.outputEncoding=T.sRGBEncoding;ren.setPixelRatio(Math.min(devicePixelRatio,2));document.body.appendChild(ren.domElement);
+const oc=new T.OrbitControls(cam,ren.domElement);oc.target.set(0,3.5,0);oc.maxPolarAngle=1.5;oc.enableDamping=true;
+scene.add(new T.HemisphereLight(0x9fb6d0,0x3a2f1e,.38));
+const sun=new T.DirectionalLight(0xffdcae,.75);sun.position.set(14,32,22);sun.target.position.set(12,0,0);
+sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-45,right:45,top:45,bottom:-45,near:1,far:100});
+scene.add(sun,sun.target);
+function cv(w,h,f){const c=document.createElement('canvas');c.width=w;c.height=h;f(c.getContext('2d'));return c}
+function tex(c){const t=new T.CanvasTexture(c);t.wrapS=t.wrapT=T.RepeatWrapping;t.encoding=T.sRGBEncoding;return t}
+// sky
+const sky=new T.Mesh(new T.SphereGeometry(500,24,12),new T.MeshBasicMaterial({side:T.BackSide,fog:false,depthWrite:false,map:new T.CanvasTexture(cv(4,256,x=>{const q=x.createLinearGradient(0,0,0,256);q.addColorStop(0,'#1b3f6e');q.addColorStop(.45,'#456e98');q.addColorStop(.52,'#6f869e');q.addColorStop(1,'#6f869e');x.fillStyle=q;x.fillRect(0,0,4,256)}))}));scene.add(sky);
+for(let i=0;i<14;i++){const c=new T.Group();for(let j=0;j<5;j++){const s=new T.Mesh(new T.SphereGeometry(7+Math.random()*7,10,8),new T.MeshBasicMaterial({color:0xaab4c0,transparent:true,opacity:.5,fog:false}));s.position.set(j*10-20+Math.random()*5,Math.random()*3,Math.random()*8);s.scale.y=.5;c.add(s)}
+c.position.set(-150+Math.random()*450,85+Math.random()*40,-200+Math.random()*400);scene.add(c)}
+// terrain
+const sm=t=>(t=Math.min(1,Math.max(0,t)),t*t*(3-2*t));
+const ell=(x,z)=>Math.hypot((x-25)/85,z/40);
+const nz=(x,z)=>.5+.5*(Math.sin(x*.021+z*.013)*Math.cos(z*.017-x*.006)+.5*Math.sin(x*.047+1.3)*Math.sin(z*.05)+.25*Math.sin(x*.11)*Math.cos(z*.09));
+const hf=(x,z)=>sm((ell(x,z)-1)/.7)*Math.max(0,-4+44*nz(x,z)*nz(x*.7+50,z*.7));
+const tg0=new T.PlaneGeometry(760,760,240,240);tg0.rotateX(-Math.PI/2);tg0.translate(60,0,0);
+const pa=tg0.attributes.position,cl=new Float32Array(pa.count*3);
+const cG=[.27,.38,.17],cF=[.13,.23,.11],cR=[.55,.52,.45],cV=[.52,.47,.37],mx=(a,b,t)=>a.map((q,i)=>q+(b[i]-q)*t);
+for(let i=0;i<pa.count;i++){const x=pa.getX(i),z=pa.getZ(i),y=hf(x,z);pa.setY(i,y);
+const ro=sm((y-13)/9),fo=sm((y-1)/6)*.75,gv=1-sm((Math.hypot((x-5)/28,z/14)-.5)/.6);
+let c=mx(cG,cF,fo);c=mx(c,cR,ro);c=mx(c,cV,gv*(1-ro));const j=.93+Math.random()*.14;cl.set([c[0]*j,c[1]*j,c[2]*j],i*3)}
+tg0.setAttribute('color',new T.BufferAttribute(cl,3));tg0.computeVertexNormals();
+const terr=new T.Mesh(tg0,new T.MeshStandardMaterial({vertexColors:true,roughness:1}));terr.receiveShadow=true;scene.add(terr);
+// trees (instanced)
+const dm=new T.Object3D(),fm=new T.MeshStandardMaterial({roughness:1,flatShading:true}),col=new T.Color();
+const trIM=new T.InstancedMesh(new T.CylinderGeometry(.12,.2,1,6),new T.MeshStandardMaterial({color:0x5a4028}),420);
+const coIM=new T.InstancedMesh(new T.ConeGeometry(1,1,8),fm,900),blIM=new T.InstancedMesh(new T.IcosahedronGeometry(1,1),fm,420);
+let nt=0,nc=0,nb=0;
+const put=(im,n,x,y,z,sx,sy,sz,c)=>{dm.position.set(x,y,z);dm.scale.set(sx,sy,sz);dm.updateMatrix();im.setMatrixAt(n,dm.matrix);if(c!==undefined){col.setHSL(.27+Math.random()*.06,.4+Math.random()*.15,c+Math.random()*.07);im.setColorAt(n,col)}};
+for(let i=0;i<6000&&nt<400;i++){const x=-220+Math.random()*520,z=-190+Math.random()*380,d=ell(x,z);
+if(!((Math.abs(z)>13||x<-24)&&Math.abs(x-40)+Math.abs(z)>14)||Math.random()>.1+.9*Math.min(1,Math.max(0,d-.4)))continue;
+const y=hf(x,z),s=.8+Math.random()*1.1,k=Math.random(),h=2.2*s;put(trIM,nt++,x,y+h/2,z,s,h,s);
+if(k<.4){for(let j=0;j<2;j++)put(coIM,nc,x,y+h*.7+(1.6+j*1.5)*s,z,1.5*s*(1-j*.35),3.2*s,1.5*s*(1-j*.35),.2),nc++}
+else if(k<.78)put(blIM,nb,x,y+h+1.2*s,z,2*s,1.6*s,2*s,.27),nb++;
+else put(coIM,nc++,x,y+3.8*s,z,.8*s,7*s,.8*s,.15)}
+trIM.count=nt;coIM.count=nc;blIM.count=nb;for(const m of[trIM,coIM,blIM]){m.frustumCulled=false;scene.add(m)}
+// rocks
+const rockM=new T.MeshStandardMaterial({color:0x9c9482,roughness:1,flatShading:true});
+function rock(x,z,s){const gm=new T.IcosahedronGeometry(1,1),p=gm.attributes.position;
+for(let i=0;i<p.count;i++){const k=1+.22*Math.sin(p.getX(i)*5.1+p.getY(i)*3.7+p.getZ(i)*4.3+s*9);p.setXYZ(i,p.getX(i)*k,p.getY(i)*k,p.getZ(i)*k)}gm.computeVertexNormals();
+const m=new T.Mesh(gm,rockM);m.scale.set(s*1.4,s*.85,s*1.1);m.rotation.y=Math.random()*6;m.position.set(x,hf(x,z)+s*.3,z);m.receiveShadow=true;scene.add(m)}
+[[-30,-12,3],[-34,-7,2],[-27,-16,2.2],[-28,15,2.6],[-33,19,3.5],[-22,24,2],[30,-20,2.5],[45,22,3],[70,-24,3.5]].forEach(a=>rock(...a));
+for(let i=0;i<50;i++){const x=-200+Math.random()*450,z=-170+Math.random()*340;if(ell(x,z)>.85)rock(x,z,2+Math.random()*5)}
+// materials
+const wood=cv(256,64,x=>{x.fillStyle='#6e4726';x.fillRect(0,0,256,64);for(let i=0;i<110;i++){const y=Math.random()*64;x.strokeStyle=`rgba(${30+Math.random()*30|0},${16+Math.random()*16|0},6,${.1+Math.random()*.22})`;x.lineWidth=.5+Math.random()*2;x.beginPath();x.moveTo(0,y);x.bezierCurveTo(80,y+Math.random()*6-3,170,y+Math.random()*6-3,256,y);x.stroke()}});
+const woodMat=new T.MeshStandardMaterial({map:tex(wood),roughness:.92});
+const armMat=new T.MeshStandardMaterial({color:0xd2bd8f,roughness:.85});
+const iron=new T.MeshStandardMaterial({color:0x2b2b30,metalness:.7,roughness:.45});
+const rope=new T.MeshStandardMaterial({color:0xcdb88a,roughness:1});
+function add(m,p=scene){m.castShadow=m.receiveShadow=true;p.add(m);return m}
+function beam(a,b,w=.28,h=.28,mat=woodMat,p=scene){const d=b.clone().sub(a),l=d.length();const m=new T.Mesh(new T.BoxGeometry(l,w,h),mat);m.position.copy(a).add(b).multiplyScalar(.5);m.quaternion.setFromUnitVectors(v(1,0,0),d.normalize());return add(m,p)}
+function seg(m,a,b,r){const d=b.clone().sub(a),l=d.length();m.position.copy(a).add(b).multiplyScalar(.5);m.scale.set(r,l,r);m.quaternion.setFromUnitVectors(v(0,1,0),d.normalize())}
+for(let m=10;m<=80;m+=10){const p=new T.Mesh(new T.CylinderGeometry(.05,.05,2),woodMat);p.position.set(m,1,-9);add(p);
+const s=new T.Sprite(new T.SpriteMaterial({map:new T.CanvasTexture(cv(128,64,x=>{x.font='bold 40px sans-serif';x.textAlign='center';x.lineWidth=6;x.strokeStyle='#222';x.fillStyle='#fff';x.strokeText(m+' m',64,44);x.fillText(m+' m',64,44)}))}));s.scale.set(2.4,1.2,1);s.position.set(m,2.6,-9);scene.add(s)}
+// rope fence
+const fp=[];for(let x=-12;x<=14;x+=2.6)fp.push([x,-7],[x,7]);for(let z=-4.4;z<=4.4;z+=2.6)fp.push([-12,z]);
+for(const[x,z]of fp){const p=new T.Mesh(new T.CylinderGeometry(.06,.07,1.1),woodMat);p.position.set(x,.55,z);add(p)}
+const fl=[];for(let x=-12;x<14;x+=2.6){fl.push(x,.85,-7,x+2.6,.85,-7,x,.85,7,x+2.6,.85,7)}for(let z=-7;z<7;z+=2.6){fl.push(-12,.85,z,-12,.85,Math.min(z+2.6,7))}
+const fg=new T.BufferGeometry();fg.setAttribute('position',new T.Float32BufferAttribute(fl,3));scene.add(new T.LineSegments(fg,new T.LineBasicMaterial({color:0xc8b078})));
+// frame
+const lx=y=>3.2*(1-(y-.15)/(H-.05));
+for(const z of[-1,1]){
+beam(v(-3.2,.15,z),v(0,H+.1,z),.34,.34);beam(v(3.2,.15,z),v(0,H+.1,z),.34,.34);
+for(const y of[1.5,3.6])beam(v(-lx(y),y,z),v(lx(y),y,z),.24,.24);
+beam(v(-lx(1.5),1.5,z),v(lx(3.6),3.6,z),.16,.16);beam(v(lx(1.5),1.5,z),v(-lx(3.6),3.6,z),.16,.16);
+beam(v(-6.5,.2,z),v(6.5,.2,z),.4,.4);
+beam(v(6.2,.35,z),v(.6,5,z),.26,.26);beam(v(-6.2,.35,z),v(-.6,5,z),.26,.26);
+beam(v(.1,H+.15,z),v(2.6,5.75,z),.22,.22);beam(v(2.6,5.75,z),v(lx(3.6),3.6,z),.16,.16);
+const c=add(new T.Mesh(new T.CylinderGeometry(.32,.32,.14,14),iron));c.rotation.x=Math.PI/2;c.position.set(0,H,z*1.12)}
+for(const x of[-6.2,6.2])beam(v(x,.2,-1.4),v(x,.2,1.4),.4,.4);
+beam(v(2.6,5.75,-1.25),v(2.6,5.75,1.25),.3,.3);beam(v(0,H+.2,-1.15),v(0,H+.2,1.15),.28,.28);
+const ax=add(new T.Mesh(new T.CylinderGeometry(.14,.14,2.6,12),iron));ax.rotation.x=Math.PI/2;ax.position.set(0,H,0);
+// trough, stones
+add(new T.Mesh(new T.BoxGeometry(9,.08,1),woodMat)).position.set(-6,.06,0);
+for(const z of[-.55,.55])beam(v(-10.5,.2,z),v(-1.3,.2,z),.12,.12);
+for(const p of[[-1,2.8],[-.2,3.2],[-.7,2.3]]){const s=add(new T.Mesh(new T.SphereGeometry(.4,12,10),new T.MeshStandardMaterial({color:0xe6dfcf,roughness:1})));s.position.set(p[0]-2,.4,p[1]+.6)}
+// arm
+const armG=new T.Group();armG.position.set(0,H,0);scene.add(armG);
+const ag=new T.CylinderGeometry(.11,.21,Ll+Ls,14);ag.rotateZ(-Math.PI/2);
+add(new T.Mesh(ag,armMat),armG).position.x=(Ll-Ls)/2;
+for(const[x,l,m]of[[-1.3,.14,iron],[0,.14,iron],[Ll-.6,.5,rope],[Ll-1.5,.14,iron]]){const r=add(new T.Mesh(new T.CylinderGeometry(.25-.02*Math.max(0,x),.25-.02*Math.max(0,x),l,14),m),armG);r.rotation.z=Math.PI/2;r.position.x=x}
+add(new T.Mesh(new T.SphereGeometry(.13,10,8),iron),armG).position.x=Ll;
+// counterweight (octagonal box)
+const cwG=new T.Group();scene.add(cwG);
+const pin=add(new T.Mesh(new T.CylinderGeometry(.08,.08,1.7,10),iron),cwG);pin.rotation.x=Math.PI/2;
+for(const z of[-.6,.6])add(new T.Mesh(new T.BoxGeometry(.1,1.7,.1),iron),cwG).position.set(0,-.85,z);
+const og=new T.CylinderGeometry(1,1,1.5,8);og.rotateX(Math.PI/2);og.rotateZ(Math.PI/8);
+add(new T.Mesh(og,woodMat),cwG).position.y=-2.65;
+for(const z of[-.45,0,.45]){const b=new T.CylinderGeometry(1.03,1.03,.1,8);b.rotateX(Math.PI/2);b.rotateZ(Math.PI/8);add(new T.Mesh(b,iron),cwG).position.set(0,-2.65,z)}
+// sling, stone, cables
+const cyl=new T.CylinderGeometry(1,1,1,6);
+const slingM=add(new T.Mesh(cyl,rope)),ropeA=add(new T.Mesh(cyl,rope)),ropeB=add(new T.Mesh(cyl,rope));
+const stone=add(new T.Mesh(new T.SphereGeometry(.28,20,16),new T.MeshStandardMaterial({color:0x8d8d90,roughness:.95})));
+const tg=new T.BufferGeometry();tg.setAttribute('position',new T.BufferAttribute(new Float32Array(3*2000),3));tg.setDrawRange(0,0);
+const trail=new T.Line(tg,new T.LineBasicMaterial({color:0xffe9a8}));trail.frustumCulled=false;scene.add(trail);
+// simulation
+const tip=b=>[Ll*Math.cos(b),H+Ll*Math.sin(b)];
+let S,speed=1,tn=0;
+function reset(){P.cw=+$('cw').value;P.L=+$('ln').value;$('cwv').textContent=P.cw;$('lv').textContent=P.L.toFixed(1);
+S={ph:'ready',b:235*D,w:0,rel:false,done:false,psi:0,pw:0,hm:0};
+const[sx,sy]=tip(S.b);S.sx=sx;S.sy=sy;S.vx=S.vy=0;const dy=sy-.25;S.bx=sx-Math.sqrt(P.L*P.L-dy*dy);S.by=.25;S.bvx=S.bvy=0;
+tg.setDrawRange(0,0);tn=0;$('st').textContent='Sẵn sàng';['dist','hmax','v0'].forEach(i=>$(i).textContent='–');$('fire').disabled=false}
+function step(h){
+if(S.ph==='ready')return;
+const I=60+P.cw*Ls*Ls+Ll*Ll*1.5;
+S.w+=(P.cw*g*Ls*Math.cos(S.b)-1.5*S.w)/I*h;S.b+=S.w*h;
+if(S.b<BEND){S.b=BEND;S.w=0}
+const[sx,sy]=tip(S.b),vx=(sx-S.sx)/h,vy=(sy-S.sy)/h,ax=(vx-S.vx)/h,ay=(vy-S.vy)/h;
+S.sx=sx;S.sy=sy;S.vx=vx;S.vy=vy;const L=P.L;
+if(S.ph==='slide'){const dy=sy-.25;
+if(dy>L*.85){const sn=(S.bx-sx)/L,cs=(sy-S.by)/L;S.psi=Math.atan2(sn,cs);S.pw=((S.bvx-vx)*Math.cos(S.psi)+(S.bvy-vy)*Math.sin(S.psi))/L;S.ph='swing'}
+else{const nx=sx-Math.sqrt(L*L-dy*dy);S.bvx=(nx-S.bx)/h;S.bvy=0;S.bx=nx;S.by=.25}}
+else{
+S.pw+=-(g*Math.sin(S.psi)+ax*Math.cos(S.psi)+ay*Math.sin(S.psi))/L*h;S.psi+=S.pw*h;
+S.bx=sx+L*Math.sin(S.psi);S.by=sy-L*Math.cos(S.psi);
+const bvx=vx+L*S.pw*Math.cos(S.psi),bvy=vy+L*S.pw*Math.sin(S.psi);
+if(!S.rel&&((S.b<115*D&&bvx>0&&bvy>0&&Math.atan2(bvy,bvx)<=.8)||S.b<12*D)){
+S.rel=true;S.px=S.bx;S.py=S.by;S.pvx=bvx;S.pvy=bvy;S.hm=S.py;$('st').textContent='Đá bay!';
+$('v0').textContent=Math.hypot(bvx,bvy).toFixed(1)+' m/s ('+(Math.atan2(bvy,bvx)/D).toFixed(0)+'°)'}}
+if(S.rel&&!S.done){S.px+=S.pvx*h;S.py+=S.pvy*h;S.pvy-=g*h;S.hm=Math.max(S.hm,S.py);
+if(++tn%8===0&&tn/8<2000){const a=tg.attributes.position;a.setXYZ(tn/8-1|0,S.px,S.py,0);tg.setDrawRange(0,tn/8|0);a.needsUpdate=true}
+$('hmax').textContent=S.hm.toFixed(1)+' m';
+if(S.py<=.28&&S.pvy<0){S.py=.28;if(Math.abs(S.pvy)>3){S.pvy*=-.3;S.pvx*=.6}else{S.done=true;$('st').textContent='Đã rơi';$('dist').textContent=S.px.toFixed(1)+' m'}}}
+if(S.rel&&!S.done)$('dist').textContent=S.px.toFixed(1)+' m'}
+function pose(){
+armG.rotation.z=S.b;cwG.position.set(-Ls*Math.cos(S.b),H-Ls*Math.sin(S.b),0);
+const e=v(S.bx,S.by,0);seg(slingM,v(S.sx,S.sy,0),e,.04);
+const ck=S.ph==='ready';ropeA.visible=ropeB.visible=ck;
+if(ck){const a=[3.4*Math.cos(S.b),H+3.4*Math.sin(S.b)];seg(ropeA,v(a[0],a[1],.3),v(-2.2,.15,.3),.022);seg(ropeB,v(a[0],a[1],-.3),v(-2.2,.15,-.3),.022)}
+if(S.rel)stone.position.set(S.px,S.py,0);else stone.position.copy(e);
+stone.rotation.z=S.rel?-S.px*.7:0}
+let last=performance.now();
+function loop(t){requestAnimationFrame(loop);const dt=Math.min((t-last)/1000,.05)*speed;last=t;
+if(S.ph!=='ready'){const n=Math.ceil(dt/(1/480)),h=dt/n;for(let i=0;i<n;i++)step(h)}
+pose();sky.position.copy(cam.position);
+if($('fl').checked){const q=S.rel?v(Math.max(S.px,0)*.8,Math.max(S.py,2),0):v(0,3.5,0);
+const d=q.sub(oc.target).multiplyScalar(.05);oc.target.add(d);cam.position.add(d)}
+oc.update();ren.render(scene,cam)}
+function size(){ren.setSize(innerWidth,innerHeight);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix()}
+addEventListener('resize',size);size();
+$('fire').onclick=()=>{if(S.ph==='ready'){S.ph='slide';$('st').textContent='Đang bắn…';$('fire').disabled=true}};
+$('reset').onclick=reset;$('cw').oninput=$('ln').oninput=reset;$('sp').onchange=e=>speed=+e.target.value;
+reset();requestAnimationFrame(loop);
+</script></body></html>
